@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex, nofollow">
+<style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head><body>
+<nav style="font:600 14px system-ui,sans-serif;display:flex;gap:16px;flex-wrap:wrap;padding:10px max(16px,env(safe-area-inset-left));background:#2a2622;color:#f3efe8"><a href="index.html" style="color:inherit">Chantier</a><a href="toilettes.html" style="color:inherit">Toilettes 3D</a><a href="montage-toilettes.html" style="color:inherit">Montage toilettes</a></nav>
+<title>Montage des toilettes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Carnet de chantier : une colonne, des plans cotés comme sur un relevé, palette des matériaux réels (placo vert hydro, sapin, chêne, marron des murs) */
+:root{
+  --paper:#f5f4f0; --card:#fffefb; --ink:#23262b; --muted:#666a70; --line:#d8d4cc;
+  --wall:#b9b3a8; --wood:#d39b5f; --oak:#a06c3e; --placo:#9cc4a6; --brown:#7a5440; --brown-soft:#e6d8cc;
+  --water:#2f74bb; --accent:#8a4f2c; --wc:#ffffff;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"Source Sans 3",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#16181b; --card:#1d2024; --ink:#ebe8e2; --muted:#a3a3a0; --line:#34373c;
+  --wall:#55575b; --wood:#d6a46d; --oak:#bd8853; --placo:#6e9c7a; --brown:#9a705a; --brown-soft:#3a2f29;
+  --water:#6aa8e4; --accent:#d58c5c; --wc:#e9e7e2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#16181b; --card:#1d2024; --ink:#ebe8e2; --muted:#a3a3a0; --line:#34373c;
+  --wall:#55575b; --wood:#d6a46d; --oak:#bd8853; --placo:#6e9c7a; --brown:#9a705a; --brown-soft:#3a2f29;
+  --water:#6aa8e4; --accent:#d58c5c; --wc:#e9e7e2; color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 var(--f-body)}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:36px}
+header{display:grid;gap:6px}
+.eyebrow{font:500 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 clamp(34px,7vw,52px)/1 var(--f-display);margin:0;text-wrap:balance}
+h2{font:600 26px/1.1 var(--f-display);margin:0;text-wrap:balance}
+.lead{color:var(--muted);max-width:62ch;margin:0}
+section{display:grid;gap:14px}
+.fig{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:480px;height:auto}
+.note{color:var(--muted);font-size:15px;margin:0;max-width:65ch}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:16px;height:12px;border-radius:2px;display:inline-block;border:1px solid var(--line)}
+ol.steps{list-style:none;margin:0;padding:0;display:grid;gap:0;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+ol.steps li::before{content:counter(s);font:700 26px/1 var(--f-display);color:var(--accent)}
+ol.steps b{display:block}
+ol.steps p{margin:2px 0 0;color:var(--muted);font-size:15px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td,th{padding:7px 8px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+th{font:500 12px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-family:var(--f-mono);font-size:14px}
+tr.tot td{font-weight:600;border-top:2px solid var(--ink)}
+.tbl{overflow-x:auto}
+a{color:var(--accent)}
+/* SVG */
+.cote{font:12px var(--f-mono);fill:var(--muted)}
+.lab{font:600 13px var(--f-body);fill:var(--ink)}
+.lab2{font:12.5px var(--f-body);fill:var(--muted)}
+.ttl{font:600 15px var(--f-display);letter-spacing:.06em;fill:var(--muted);text-transform:uppercase}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Toilettes · WC posé · fait maison</div>
+  <h1>Montage des toilettes</h1>
+  <p class="lead">Les plans et les découpes pour refaire les gaines, le coffret bas et poser le placard. Vue depuis la porte : les tuyaux et le coffret sont à gauche. Les cotes marquées ≈ viennent de la maquette, à vérifier au mètre.</p>
+</header>
+
+<section>
+  <h2>1. Vue de dessus</h2>
+  <div class="fig">
+  <svg viewBox="0 0 600 480" role="img" aria-label="Vue de dessus du fond des toilettes avec les deux gaines, leurs tasseaux, le WC et le coffret bas">
+    <defs>
+      <pattern id="h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="var(--paper)"/><line x1="0" y1="0" x2="0" y2="8" stroke="var(--wall)" stroke-width="3"/></pattern>
+    </defs>
+    <!-- murs -->
+    <rect x="55" y="20" width="490" height="20" fill="url(#h)"/>
+    <rect x="55" y="20" width="20" height="440" fill="url(#h)"/>
+    <rect x="525" y="20" width="20" height="440" fill="url(#h)"/>
+    <text class="ttl" x="300" y="14" text-anchor="middle">Mur du fond</text>
+    <!-- gaine gauche -->
+    <rect x="75" y="40" width="110" height="150" fill="var(--brown-soft)" stroke="none"/>
+    <circle cx="115" cy="90" r="20" fill="none" stroke="var(--wall)" stroke-width="3"/>
+    <circle cx="150" cy="70" r="9" fill="none" stroke="var(--wall)" stroke-width="3"/>
+    <rect x="75" y="183.5" width="110" height="6.5" fill="var(--placo)"/>
+    <rect x="178.5" y="40" width="6.5" height="150" fill="var(--placo)"/>
+    <rect x="75" y="161.5" width="22" height="22" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <rect x="156.5" y="161.5" width="22" height="22" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <rect x="156.5" y="40" width="22" height="22" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <text class="lab" x="86" y="177" text-anchor="middle" font-size="11">A</text>
+    <text class="lab" x="167.5" y="177" text-anchor="middle" font-size="11">B</text>
+    <text class="lab" x="167.5" y="55" text-anchor="middle" font-size="11">C</text>
+    <!-- robinet dans la gaine + flexible -->
+    <path d="M115 110 L115 120 L160 120" fill="none" stroke="var(--water)" stroke-width="3"/>
+    <rect x="152" y="114" width="12" height="12" rx="2" fill="var(--water)"/>
+    <path d="M164 120 Q190 120 205 108" fill="none" stroke="var(--water)" stroke-width="3" stroke-dasharray="4 3"/>
+    <!-- gaine droite -->
+    <rect x="415" y="40" width="110" height="150" fill="var(--brown-soft)"/>
+    <circle cx="480" cy="95" r="16" fill="none" stroke="var(--wall)" stroke-width="3"/>
+    <rect x="415" y="183.5" width="110" height="6.5" fill="var(--placo)"/>
+    <rect x="415" y="40" width="6.5" height="150" fill="var(--placo)"/>
+    <rect x="503" y="161.5" width="22" height="22" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <rect x="421.5" y="161.5" width="22" height="22" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <rect x="421.5" y="40" width="22" height="22" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <text class="lab" x="514" y="177" text-anchor="middle" font-size="11">A</text>
+    <text class="lab" x="432.5" y="177" text-anchor="middle" font-size="11">B</text>
+    <text class="lab" x="432.5" y="55" text-anchor="middle" font-size="11">C</text>
+    <!-- placard (au-dessus) -->
+    <rect x="200" y="40" width="200" height="160" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="6 5"/>
+    <text class="lab2" x="470" y="290" text-anchor="middle">pointillés :</text><text class="lab2" x="470" y="307" text-anchor="middle">le placard,</text><text class="lab2" x="470" y="324" text-anchor="middle">au-dessus du WC</text>
+    <!-- WC -->
+    <rect x="210" y="45" width="180" height="82" rx="8" fill="var(--wc)" stroke="var(--ink)" stroke-width="1.4"/>
+    <text class="lab2" x="300" y="92" text-anchor="middle">réservoir</text>
+    <path d="M207 135 Q207 127 215 127 L385 127 Q393 127 393 135 L393 250 Q393 375 300 375 Q207 375 207 250 Z" fill="var(--wc)" stroke="var(--ink)" stroke-width="1.4"/>
+    <ellipse cx="300" cy="262" rx="58" ry="78" fill="none" stroke="var(--muted)" stroke-width="1.2"/>
+    <text class="lab" x="300" y="268" text-anchor="middle">WC Nerea</text>
+    <!-- coffret bas -->
+    <rect x="75" y="190" width="60" height="270" fill="var(--oak)" opacity=".85"/>
+    <rect x="75" y="190" width="50" height="270" fill="none" stroke="var(--ink)" stroke-width="1" stroke-dasharray="4 3"/>
+    <text class="lab" x="105" y="330" text-anchor="middle" transform="rotate(-90 105 330)" fill="var(--card)">coffret bas · dessus chêne</text>
+    <!-- cotes -->
+    <line x1="185" y1="420" x2="415" y2="420" stroke="var(--muted)" stroke-width="1"/>
+    <line x1="185" y1="412" x2="185" y2="428" stroke="var(--muted)"/><line x1="415" y1="412" x2="415" y2="428" stroke="var(--muted)"/>
+    <text class="cote" x="300" y="442" text-anchor="middle">niche ≈ 46 cm (à mesurer)</text>
+    <line x1="560" y1="40" x2="560" y2="190" stroke="var(--muted)"/><line x1="553" y1="40" x2="567" y2="40" stroke="var(--muted)"/><line x1="553" y1="190" x2="567" y2="190" stroke="var(--muted)"/>
+    <text class="cote" x="575" y="118" transform="rotate(90 575 118)" text-anchor="middle">≈ 30 cm</text>
+    <line x1="415" y1="205" x2="525" y2="205" stroke="var(--muted)"/>
+    <text class="cote" x="470" y="222" text-anchor="middle">≈ 22 cm</text>
+    <!-- annotations -->
+    <text class="lab2" x="120" y="146" text-anchor="middle">robinet → flexible</text>
+  </svg>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--wood)"></i>Tasseau 44 × 44 (A, B, C)</span>
+    <span><i style="background:var(--placo)"></i>Placo hydrofuge</span>
+    <span><i style="background:var(--oak)"></i>Planche chêne</span>
+    <span><i style="background:var(--water)"></i>Eau</span>
+  </div>
+  <p class="note">Chaque gaine a 3 tasseaux : A contre le mur de côté, B dans l'angle libre, C contre le mur du fond. Les 2 faces de placo se vissent sur A–B et B–C. Le robinet d'arrêt reste dans la gaine gauche, seul le flexible sort par un trou à côté du réservoir.</p>
+</section>
+
+<section>
+  <h2>2. Vue de face, depuis la porte</h2>
+  <div class="fig">
+  <svg viewBox="0 0 600 860" role="img" aria-label="Vue de face du fond des toilettes : gaine gauche finie, gaine droite en ossature, WC, étagère et placard">
+    <defs>
+      <pattern id="h2" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="var(--paper)"/><line x1="0" y1="0" x2="0" y2="8" stroke="var(--wall)" stroke-width="3"/></pattern>
+    </defs>
+    <rect x="125" y="30" width="270" height="20" fill="url(#h2)"/>
+    <rect x="125" y="800" width="270" height="20" fill="url(#h2)"/>
+    <text class="ttl" x="260" y="22" text-anchor="middle">Plafond</text>
+    <text class="ttl" x="260" y="845" text-anchor="middle">Sol</text>
+    <!-- fond de niche -->
+    <rect x="191" y="50" width="138" height="750" fill="var(--brown-soft)"/>
+    <!-- gaine gauche finie -->
+    <rect x="125" y="50" width="66" height="750" fill="var(--placo)" stroke="var(--ink)" stroke-width="1"/>
+    <text class="lab" x="158" y="300" text-anchor="middle" transform="rotate(-90 158 300)">gaine finie : placo vissé</text>
+    <rect x="160" y="577" width="12" height="12" rx="2" fill="none" stroke="var(--water)" stroke-width="2" stroke-dasharray="3 2"/>
+    <path d="M172 583 L191 583" stroke="var(--water)" stroke-width="3" stroke-dasharray="3 2"/>
+    <path d="M191 583 Q200 583 206 590" fill="none" stroke="var(--water)" stroke-width="3"/>
+    <!-- gaine droite en ossature -->
+    <rect x="329" y="50" width="66" height="750" fill="var(--paper)" stroke="var(--muted)" stroke-width="1" stroke-dasharray="5 4"/>
+    <rect x="329" y="50" width="66" height="13" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <rect x="329" y="787" width="66" height="13" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <rect x="329" y="63" width="13" height="724" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <rect x="382" y="63" width="13" height="724" fill="var(--wood)" stroke="var(--ink)" stroke-width=".8"/>
+    <path d="M342 787 v-10 h8" fill="none" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M382 787 v-10 h-8" fill="none" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M342 63 v10 h8" fill="none" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M382 63 v10 h-8" fill="none" stroke="var(--ink)" stroke-width="2"/>
+    <!-- WC -->
+    <rect x="206" y="566" width="108" height="99" rx="6" fill="var(--wc)" stroke="var(--ink)" stroke-width="1.4"/>
+    <rect x="203" y="665" width="114" height="18" rx="5" fill="var(--wc)" stroke="var(--ink)" stroke-width="1.4"/>
+    <path d="M222 683 L228 800 L292 800 L298 683 Z" fill="var(--wc)" stroke="var(--ink)" stroke-width="1.4"/>
+    <!-- étagère -->
+    <rect x="191" y="387" width="138" height="9" fill="var(--oak)" stroke="var(--ink)" stroke-width=".8"/>
+    <!-- placard -->
+    <rect x="200" y="65" width="120" height="225" fill="var(--wc)" stroke="var(--ink)" stroke-width="1.4"/>
+    <rect x="300" y="160" width="5" height="40" rx="2" fill="var(--ink)"/>
+    <text class="lab" x="260" y="175" text-anchor="middle">Placard</text>
+    <text class="lab2" x="260" y="193" text-anchor="middle">IKEA ENHET</text>
+    <text class="lab2" x="260" y="209" text-anchor="middle">40 × 75 cm</text>
+    <!-- coffret bas devant la gaine gauche -->
+    <rect x="125" y="614" width="30" height="186" fill="var(--placo)" stroke="var(--ink)" stroke-width="1"/>
+    <rect x="125" y="608" width="36" height="6" fill="var(--oak)" stroke="var(--ink)" stroke-width=".8"/>
+    <!-- cotes gauche -->
+    <line x1="95" y1="50" x2="95" y2="800" stroke="var(--muted)"/>
+    <line x1="88" y1="50" x2="102" y2="50" stroke="var(--muted)"/><line x1="88" y1="800" x2="102" y2="800" stroke="var(--muted)"/>
+    <text class="cote" x="82" y="430" transform="rotate(-90 82 430)" text-anchor="middle">≈ 2,50 m sol → plafond</text>
+    <line x1="112" y1="608" x2="112" y2="800" stroke="var(--muted)"/>
+    <text class="cote" x="106" y="704" transform="rotate(-90 106 704)" text-anchor="middle">64 cm</text>
+    <!-- cotes droite et légendes -->
+    <g class="lab2">
+      <text x="410" y="60">lisse haut (tasseau à plat)</text>
+      <text x="410" y="78">+ cale si plafond à 2,53 m</text>
+      <text x="410" y="430">montants 2,40 m</text>
+      <text x="410" y="448">vissés dans les lisses</text>
+      <text x="410" y="797">lisse bas (vissée au sol)</text>
+      <text x="410" y="766">équerres en haut et en bas</text>
+    </g>
+    <g class="cote">
+      <text x="260" y="380" text-anchor="middle">étagère ≈ 1,35 m</text>
+      <text x="260" y="308" text-anchor="middle">≈ 1,70 m</text>
+      <text x="200" y="556">flexible</text>
+    </g>
+  </svg>
+  </div>
+  <p class="note">À gauche la gaine finie, à droite la même gaine sans placo pour voir l'ossature. Les hauteurs du placard et de l'étagère sont indicatives : garde au moins 50 cm entre le haut du réservoir et l'étagère pour pouvoir ouvrir le couvercle.</p>
+</section>
+
+<section>
+  <h2>3. Coupe du coffret bas</h2>
+  <div class="fig">
+  <svg viewBox="0 0 600 515" role="img" aria-label="Coupe du coffret bas : tasseaux, façade en placo et planche en chêne vissée sur le dessus">
+    <defs>
+      <pattern id="h3" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="var(--paper)"/><line x1="0" y1="0" x2="0" y2="8" stroke="var(--wall)" stroke-width="3"/></pattern>
+    </defs>
+    <rect x="90" y="40" width="30" height="430" fill="url(#h3)"/>
+    <rect x="90" y="460" width="300" height="16" fill="url(#h3)"/>
+    <text class="ttl" x="105" y="32" text-anchor="middle">Mur</text>
+    <!-- tuyaux -->
+    <circle cx="142" cy="438" r="18" fill="none" stroke="var(--wall)" stroke-width="4"/>
+    <circle cx="160" cy="405" r="6" fill="none" stroke="var(--water)" stroke-width="3"/>
+    <circle cx="140" cy="395" r="6" fill="none" stroke="var(--water)" stroke-width="3"/>
+    <!-- tasseaux -->
+    <rect x="120" y="88" width="26" height="26" fill="var(--wood)" stroke="var(--ink)" stroke-width="1"/>
+    <rect x="146" y="88" width="26" height="26" fill="var(--wood)" stroke="var(--ink)" stroke-width="1"/>
+    <rect x="146" y="434" width="26" height="26" fill="var(--wood)" stroke="var(--ink)" stroke-width="1"/>
+    <!-- placo façade -->
+    <rect x="172" y="88" width="8" height="372" fill="var(--placo)" stroke="var(--ink)" stroke-width="1"/>
+    <!-- planche chêne -->
+    <rect x="120" y="76" width="72" height="12" fill="var(--oak)" stroke="var(--ink)" stroke-width="1"/>
+    <!-- vis -->
+    <line x1="133" y1="74" x2="133" y2="106" stroke="var(--ink)" stroke-width="2"/>
+    <line x1="159" y1="74" x2="159" y2="106" stroke="var(--ink)" stroke-width="2"/>
+    <!-- joint -->
+    <path d="M120 76 L120 66 L128 76 Z" fill="var(--water)"/>
+    <!-- cotes -->
+    <line x1="120" y1="490" x2="180" y2="490" stroke="var(--muted)"/>
+    <line x1="120" y1="484" x2="120" y2="496" stroke="var(--muted)"/><line x1="180" y1="484" x2="180" y2="496" stroke="var(--muted)"/>
+    <text class="cote" x="150" y="509" text-anchor="middle">10 cm</text>
+    <line x1="215" y1="76" x2="215" y2="460" stroke="var(--muted)"/>
+    <line x1="208" y1="76" x2="222" y2="76" stroke="var(--muted)"/><line x1="208" y1="460" x2="222" y2="460" stroke="var(--muted)"/>
+    <text class="cote" x="228" y="272">64 cm</text>
+    <!-- légendes -->
+    <g class="lab2">
+      <line x1="196" y1="70" x2="300" y2="50" stroke="var(--muted)"/>
+      <text x="305" y="46">planche chêne 2 cm, ≈ 12 cm de large</text>
+      <text x="305" y="63">dépasse de 2 cm devant, vissée par le dessus</text>
+      <line x1="124" y1="68" x2="300" y2="96" stroke="var(--muted)"/>
+      <text x="305" y="100">joint silicone contre le mur</text>
+      <line x1="160" y1="116" x2="300" y2="140" stroke="var(--muted)"/>
+      <text x="305" y="144">2 tasseaux en haut : un vissé au mur,</text>
+      <text x="305" y="161">un devant, reliés par des équerres</text>
+      <line x1="180" y1="260" x2="300" y2="260" stroke="var(--muted)"/>
+      <text x="305" y="264">façade en placo vissée sur les tasseaux</text>
+      <line x1="172" y1="447" x2="300" y2="420" stroke="var(--muted)"/>
+      <text x="305" y="416">tasseau au sol, chevillé</text>
+      <line x1="160" y1="405" x2="300" y2="372" stroke="var(--muted)"/>
+      <text x="305" y="368">tuyaux qui restent cachés dessous</text>
+    </g>
+  </svg>
+  </div>
+  <p class="note">Le coffret fait environ 1,35 m de long, de la porte à la gaine gauche. Les tasseaux du haut s'arrêtent à 62 cm pour que la planche de 2 cm arrive à 64 cm. Ne colle pas la planche : vissée, elle se démonte pour accéder aux tuyaux.</p>
+</section>
+
+<section>
+  <h2>4. Les découpes</h2>
+  <p class="note">Avant de couper, mesure chaque face en haut, au milieu et en bas : les murs ne sont jamais droits. Garde la plus petite mesure et enlève 2 à 3 mm. Les cotes ci-dessous partent des mesures de la maquette (gaines ≈ 22 × 30 cm, plafond ≈ 2,50 m, coffret ≈ 1,35 m).</p>
+  <div class="fig">
+  <svg viewBox="0 0 600 470" role="img" aria-label="Plan de découpe des deux plaques de placo">
+    <defs>
+      <pattern id="hc" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="var(--card)"/><line x1="0" y1="0" x2="0" y2="7" stroke="var(--line)" stroke-width="2.5"/></pattern>
+    </defs>
+    <text class="ttl" x="124" y="30" text-anchor="middle">Plaque 1 · les gaines</text>
+    <text class="ttl" x="434" y="30" text-anchor="middle">Plaque 2 · le coffret</text>
+    <!-- plaque 1 : 120 x 250 -> 168 x 350 -->
+    <g transform="translate(40 50)">
+      <rect x="0" y="0" width="30.8" height="350" fill="var(--placo)" stroke="var(--ink)"/>
+      <rect x="30.8" y="0" width="40.2" height="350" fill="var(--placo)" stroke="var(--ink)" opacity=".8"/>
+      <rect x="71" y="0" width="30.8" height="350" fill="var(--placo)" stroke="var(--ink)"/>
+      <rect x="101.8" y="0" width="40.2" height="350" fill="var(--placo)" stroke="var(--ink)" opacity=".8"/>
+      <rect x="142" y="0" width="26" height="350" fill="url(#hc)" stroke="var(--ink)"/>
+      <g class="lab" font-size="12">
+        <text transform="translate(19 175) rotate(-90)" text-anchor="middle">Gauche · face 22</text>
+        <text transform="translate(55 175) rotate(-90)" text-anchor="middle">Gauche · côté WC 28,7</text>
+        <text transform="translate(90 175) rotate(-90)" text-anchor="middle">Droite · face 22</text>
+        <text transform="translate(126 175) rotate(-90)" text-anchor="middle">Droite · côté WC 28,7</text>
+        <text transform="translate(159 175) rotate(-90)" text-anchor="middle" class="lab2">chute 18</text>
+      </g>
+      <circle cx="58" cy="249" r="4" fill="none" stroke="var(--water)" stroke-width="2"/>
+      <text class="cote" x="0" y="368">← 120 cm →</text>
+      <text class="cote" transform="translate(186 175) rotate(90)" text-anchor="middle">hauteur sol → plafond − 1 cm</text>
+    </g>
+    <!-- plaque 2 -->
+    <g transform="translate(350 50)">
+      <rect x="0" y="0" width="168" height="350" fill="url(#hc)" stroke="var(--ink)"/>
+      <rect x="0" y="0" width="86.8" height="189" fill="var(--placo)" stroke="var(--ink)"/>
+      <rect x="86.8" y="0" width="14" height="86.8" fill="var(--placo)" stroke="var(--ink)" opacity=".8"/>
+      <text class="lab" x="43" y="90" text-anchor="middle" font-size="12">Façade</text>
+      <text class="lab2" x="43" y="107" text-anchor="middle">62 × 135</text>
+      <text class="lab2" transform="translate(97 140) rotate(-90)" text-anchor="middle" font-size="11">joue 10 × 62</text>
+      <text class="lab2" x="84" y="270" text-anchor="middle">en réserve</text>
+      <text class="lab2" x="84" y="287" text-anchor="middle">(erreur de coupe)</text>
+      <text class="cote" x="0" y="368">← 120 cm →</text>
+      <text class="cote" transform="translate(186 175) rotate(90)" text-anchor="middle">250 cm</text>
+    </g>
+  </svg>
+  </div>
+  <p class="note"><b>Plaque 1 :</b> 4 bandes sur toute la hauteur. La face fait la largeur de la gaine (≈ 22 cm). Le côté WC fait la profondeur moins l'épaisseur de la face (30 − 1,3 ≈ 28,7 cm), parce qu'il vient se caler derrière elle. Le rond bleu est le trou du flexible, sur la bande « Gauche · côté WC ».<br>
+  <b>Plaque 2 :</b> la façade du coffret fait 62 cm de haut (64 moins les 2 cm de la planche) sur la longueur mesurée. La joue de 10 × 62 ne sert que si le coffret ne bute pas contre le retour de la porte.</p>
+
+  <h2 style="font-size:21px;margin-top:6px">Couper une plaque de placo</h2>
+  <ol class="steps">
+    <li><div><b>Tracer</b><p>Plaque posée à plat sur le sol propre, face imprimée dessus. Reporte la cote en haut et en bas, puis relie avec une règle de maçon, un niveau de 2 m ou un tasseau bien droit.</p></div></li>
+    <li><div><b>Entailler le carton du dessus</b><p>Cutter le long de la règle, 2 ou 3 passes. Pas besoin de traverser le plâtre.</p></div></li>
+    <li><div><b>Casser</b><p>Glisse un tasseau sous le trait, puis appuie d'un coup sec sur la bande : le plâtre casse net le long de l'entaille.</p></div></li>
+    <li><div><b>Couper le carton du dessous</b><p>Plie légèrement la bande et coupe le carton du dos au cutter, par l'arrière.</p></div></li>
+    <li><div><b>Ébavurer</b><p>Passe un rabot à plâtre ou une cale avec du papier de verre sur le chant, pour que la bande se colle bien contre le mur.</p></div></li>
+    <li><div><b>Le trou du flexible</b><p>Présente le réservoir à blanc pour repérer la hauteur de l'arrivée (≈ 70 cm). Perce à la scie cloche Ø 25–30 mm, ou fais 4 traits de cutter et un petit coup de marteau. Une rosace cache le trou.</p></div></li>
+  </ol>
+  <p class="note">Si le plafond fait 2,53 m, colle la plaque au plafond et laisse l'écart en bas : les 3 cm sont cachés par la plinthe. Pour les bandes de 2,50 m, c'est plus simple à deux.</p>
+
+  <h2 style="font-size:21px;margin-top:6px">Les tasseaux (9 de 2,40 m)</h2>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Tasseau</th><th>Ce que tu coupes dedans</th><th style="text-align:right">Reste</th></tr></thead>
+    <tbody>
+      <tr><td>1 à 6</td><td>Les 6 montants des gaines, sans coupe (A, B, C × 2)</td><td class="n">—</td></tr>
+      <tr><td>7</td><td>Les 8 lisses : 4 × 20,7 cm (le long de la face) + 4 × 24,3 cm (le long du côté, entre le mur du fond et la face)</td><td class="n">≈ 60 cm</td></tr>
+      <tr><td>8</td><td>Coffret : tasseau mural haut, longueur du coffret (≈ 135)</td><td class="n">≈ 105 cm</td></tr>
+      <tr><td>9</td><td>Coffret : tasseau avant haut (≈ 135)</td><td class="n">≈ 105 cm</td></tr>
+      <tr><td>Restes</td><td>Tasseau au sol du coffret en 2 morceaux (105 + 30) et 1 petit poteau de 53 cm au milieu du coffret, entre le bas et le haut</td><td class="n">≈ 80 cm</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Coupe à la scie égoïne avec une boîte à onglets pour que les coupes soient d'équerre. Les lisses tiennent dans un seul tasseau, et le tasseau au sol du coffret peut être en deux morceaux puisqu'il est chevillé au sol.</p>
+
+  <h2 style="font-size:21px;margin-top:6px">Le bois en chêne</h2>
+  <p class="note"><b>Étagère :</b> largeur de la niche mesurée moins 2 mm, pour qu'elle rentre sans forcer. Si la niche fait 45 cm ou un peu plus, prends directement l'étagère de 45 cm, sans coupe.<br>
+  <b>Planche du coffret :</b> longueur du coffret, et largeur ≈ 12 cm en enlevant le côté avec l'écorce. Cette coupe sur 1,35 m demande une scie circulaire ou une scie sauteuse avec un guide. Si tu n'en as pas, demande la découpe au rayon bois du magasin.</p>
+</section>
+
+<section>
+  <h2>Dans l'ordre</h2>
+  <ol class="steps">
+    <li><div><b>Couper l'eau, déposer l'ancien WC, les gaines et le coffret</b><p>Bouchonne l'évacuation avec un chiffon pour les odeurs.</p></div></li>
+    <li><div><b>Mesurer la niche et le plafond</b><p>Niche entre les gaines (il faut au moins 41 cm pour le WC et son flexible), hauteur sous plafond pour la cale des lisses.</p></div></li>
+    <li><div><b>Couper et boucher les tuyaux inutiles</b><p>Les deux tuyaux verticaux de l'ancien lave-mains, sous 64 cm, s'ils ne servent plus.</p></div></li>
+    <li><div><b>Poser le robinet d'arrêt dans la gaine gauche</b><p>Avant de fermer la gaine, à la hauteur de l'arrivée du réservoir.</p></div></li>
+    <li><div><b>Monter l'ossature des gaines</b><p>Lisses au sol et au plafond, puis les 3 montants A, B, C par gaine, vissés dans les lisses, équerres contre les murs.</p></div></li>
+    <li><div><b>Couper et visser le placo sur les gaines</b><p>Suivre le plan de découpe de la plaque 1. Vis tous les 25 cm environ, en commençant par la face, puis le côté WC.</p></div></li>
+    <li><div><b>Monter le coffret bas</b><p>Tasseaux, façade en placo. La planche en chêne se pose plus tard.</p></div></li>
+    <li><div><b>Joints et peinture</b><p>Marron en bas et dans le fond, beige clair en haut, plafond blanc.</p></div></li>
+    <li><div><b>Poncer l'étagère et la planche</b><p>Grain 120 puis 180, chants compris.</p></div></li>
+    <li><div><b>Poser le parquet et la barre de seuil</b><p>Découpé autour de l'emplacement du WC.</p></div></li>
+    <li><div><b>Poser le WC</b><p>Pipe, fixations au sol, flexible, joint silicone autour du pied.</p></div></li>
+    <li><div><b>Poser la planche du coffret, le placard et l'étagère</b><p>Planche vissée par le dessus, joint silicone contre le mur.</p></div></li>
+  </ol>
+</section>
+
+<section>
+  <h2>Liste d'achats</h2>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Article</th><th>Magasin</th><th style="text-align:right">Prix</th></tr></thead>
+    <tbody>
+      <tr><td>Pack WC à poser Nerea, abattant inclus</td><td>Leroy Merlin</td><td class="n">59,90 €</td></tr>
+      <tr><td>Robinet d'arrêt, flexible, pipe ≈</td><td>Leroy Merlin</td><td class="n">25,00 €</td></tr>
+      <tr><td>Tasseaux 44 × 44, 2,4 m : 2 lots de 4 + 1 à l'unité ≈</td><td>Leroy Merlin</td><td class="n">78,86 €</td></tr>
+      <tr><td>Équerres, lot de 25 (ou à l'unité)</td><td>Leroy Merlin</td><td class="n">19,90 €</td></tr>
+      <tr><td>Chevilles et vis ≈</td><td>Leroy Merlin</td><td class="n">15,00 €</td></tr>
+      <tr><td>2 plaques de placo hydrofuge 250 × 120</td><td>Leroy Merlin</td><td class="n">47,80 €</td></tr>
+      <tr><td>Étagère chêne brut 60 cm (existe en 45 cm) + fixations ≈</td><td>Leroy Merlin</td><td class="n">26,90 €</td></tr>
+      <tr><td>Planche chêne brut 20 mm, 1,5 m (dessus du coffret)</td><td>Leroy Merlin</td><td class="n">20,90 €</td></tr>
+      <tr><td>Peinture 2 L (sous-couche déjà faite)</td><td>Leroy Merlin</td><td class="n">48,90 €</td></tr>
+      <tr><td>Barre de seuil ≈</td><td>Leroy Merlin</td><td class="n">10,00 €</td></tr>
+      <tr><td>Placard ENHET avec porte + poignées</td><td>IKEA</td><td class="n">64,00 €</td></tr>
+      <tr class="tot"><td colspan="2">Total</td><td class="n">≈ 417 €</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">≈ = estimation, prix non relevé. En option : panneaux de tasseaux chêne sur les gaines (+ 139,80 €) et sur le coffret (+ 69,90 €). Pas compté : le 2e pot de peinture si tu fais marron et beige (environ 25 à 30 €). Le détail et les liens sont dans le <a href="index.html#piece-wc">carnet de chantier</a>.</p>
+</section>
+</div>
+
+</body></html>

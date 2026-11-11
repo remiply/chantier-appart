@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex, nofollow">
+<style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<script>
+window.claude = { use: async (n) => {
+  if (n === 'user') return { can: async () => false };
+  if (n !== 'db') return null;
+  const d = await fetch('data.json?v=' + Date.now(), {cache: 'no-store'}).then(r => r.json());
+  window.__maj = d.updated;
+  const el = document.getElementById('maj'); if (el) el.textContent = 'Lecture seule · mis à jour le ' + d.updated;
+  return { collection: (name) => ({ onSnapshot: (cb) => { const docs = (d[name] || []).map(x => ({ id: x.id, data: () => x }));
+    setTimeout(() => cb({ docs, size: docs.length, metadata: { fromCache: false } }), 0); return () => {}; } }) };
+} };
+</script>
+</head><body>
+<nav style="font:600 14px system-ui,sans-serif;display:flex;gap:16px;flex-wrap:wrap;padding:10px max(16px,env(safe-area-inset-left));background:#2a2622;color:#f3efe8"><a href="index.html" style="color:inherit">Chantier</a><a href="toilettes.html" style="color:inherit">Toilettes 3D</a><a href="montage-toilettes.html" style="color:inherit">Montage toilettes</a></nav>
+<title>Chantier de l'appart</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout : barre haute (navigation), puis une vue à la fois : vue d'ensemble (chiffres + plan + prochaines étapes), fiche pièce, liste de courses */
+:root{
+  --bg:#efeee9; --panel:#fbfaf7; --ink:#1d1f1c; --muted:#686b64; --line:#dedcd4; --soft:#e6e4dc;
+  --accent:#2f5b4e; --accent-ink:#f4f7f5; --accent-soft:#dfe9e4;
+  --ok:#3c7a4a; --ok-soft:#e1eedf; --wip:#a46a12; --wip-soft:#f6e9d2; --todo:#7c7f78; --todo-soft:#e7e6e0; --danger:#a33b2b;
+  --f-display:"Bricolage Grotesque","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141613; --panel:#1c1f1b; --ink:#e9eae4; --muted:#9da196; --line:#2e322c; --soft:#252923;
+  --accent:#7fb8a4; --accent-ink:#0f1a16; --accent-soft:#1f3029;
+  --ok:#86c493; --ok-soft:#1d2e20; --wip:#e2a74e; --wip-soft:#33270f; --todo:#9da196; --todo-soft:#272a25; --danger:#e58a7b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141613; --panel:#1c1f1b; --ink:#e9eae4; --muted:#9da196; --line:#2e322c; --soft:#252923;
+  --accent:#7fb8a4; --accent-ink:#0f1a16; --accent-soft:#1f3029;
+  --ok:#86c493; --ok-soft:#1d2e20; --wip:#e2a74e; --wip-soft:#33270f; --todo:#9da196; --todo-soft:#272a25; --danger:#e58a7b; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.app{max-width:1120px;margin:0 auto}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:14px 12px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.brand{font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:-.01em;margin:0;display:flex;align-items:center;gap:9px;color:var(--ink);text-decoration:none}
+.brand i{width:22px;height:22px;border-radius:5px;background:var(--accent);display:grid;place-items:center}
+.brand i::after{content:"";width:10px;height:10px;border:2px solid var(--accent-ink);border-top:0;border-radius:0 0 2px 2px}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:14px;padding:6px 11px;border-radius:7px}
+nav a[aria-current="page"]{background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sync{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--todo)}
+.sync.ok::before{background:var(--ok)} .sync.warn::before{background:var(--wip)}
+
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4.5vw,40px);letter-spacing:-.02em;line-height:1.05;margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:19px;margin:0}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:22px}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.kpi b{font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.kpi span{font-size:13px;color:var(--muted)}
+.bar{height:6px;border-radius:3px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+
+.sec-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 14px;margin-bottom:10px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:9px;height:9px;border-radius:2px}
+
+.plan{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.plan2d{display:block;width:100%;max-width:620px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.plan2d polygon{stroke:var(--ink);stroke-width:.07;stroke-linejoin:round;transition:fill .15s}
+.plan2d .pz.s-a_faire{fill:var(--todo-soft)} .plan2d .pz.s-en_cours{fill:var(--wip-soft)} .plan2d .pz.s-fini{fill:var(--ok-soft)}
+.plan2d .pz.bal{stroke-dasharray:.15 .1}
+.plan2d a:hover polygon,.plan2d a:focus polygon{fill:var(--accent-soft)}
+.plan2d a:focus{outline:none}
+.plan2d text{font-family:var(--f-body);text-anchor:middle;pointer-events:none}
+.plan2d .pn{font-weight:600;fill:var(--ink)} .plan2d .pm{fill:var(--muted)}
+.plan-wrap{display:flex;flex-direction:column;gap:8px}
+.plan-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+#v3d{display:flex;flex-direction:column;gap:14px}
+#v3d[hidden]{display:none}
+.stage3d{position:relative;height:min(72vh,680px);min-height:380px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.stage3d canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.lab3d{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.l3{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 1px 3px rgb(0 0 0 / .12)}
+.l3:hover{border-color:var(--accent)} .l3:focus-visible{outline:2px solid var(--accent)}
+.l3 .chip{font-size:10px;padding:0 6px}
+.ctrl3d{position:absolute;left:10px;right:10px;bottom:10px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;pointer-events:none}
+.ctrl3d .seg{pointer-events:auto;box-shadow:0 1px 3px rgb(0 0 0 / .12)}
+.tile{font:inherit;text-align:left;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--todo);border-radius:9px;padding:12px 13px;display:flex;flex-direction:column;gap:8px;cursor:pointer;min-height:112px;text-decoration:none}
+.tile:hover{border-color:var(--muted)} .tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tile.s-en_cours{border-left-color:var(--wip)} .tile.s-fini{border-left-color:var(--ok)}
+.tile .t-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.tile b{font-family:var(--f-display);font-size:18px;font-weight:600;line-height:1.15}
+.tile .meta{margin-top:auto;display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;background:var(--todo-soft);color:var(--todo)}
+.chip.s-en_cours{background:var(--wip-soft);color:var(--wip)} .chip.s-fini{background:var(--ok-soft);color:var(--ok)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:14px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.list li{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.list li.done .txt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.list .txt{flex:1;min-width:0;overflow-wrap:anywhere}
+.list .txt small{display:block;color:var(--muted);font-size:12px;text-decoration:none}
+.list .amt{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.list .amt small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+input[type=checkbox]{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent);flex:none;cursor:pointer}
+.x{font:inherit;background:none;border:0;color:var(--muted);cursor:pointer;padding:0 4px;font-size:18px;line-height:1;border-radius:4px}
+.x:hover{color:var(--danger)} .x:focus-visible{outline:2px solid var(--accent)}
+a.lk{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+a.lk:hover{text-decoration-color:var(--accent)}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+
+form.add{display:flex;gap:6px;flex-wrap:wrap}
+form.add input,textarea,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+form.add input{flex:1 1 120px}
+form.add input.sm{flex:0 1 84px}
+form.add input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;padding:8px 14px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+textarea{width:100%;min-height:110px;resize:vertical;line-height:1.5}
+
+.room-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:14px}
+.back{font-size:14px;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink)}
+.seg{display:flex;background:var(--soft);border-radius:9px;padding:3px;gap:2px}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:0;background:none;color:var(--muted);padding:6px 11px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"].s-a_faire{background:var(--panel);color:var(--ink)}
+.seg button[aria-pressed="true"].s-en_cours{background:var(--wip-soft);color:var(--wip)}
+.seg button[aria-pressed="true"].s-fini{background:var(--ok-soft);color:var(--ok)}
+.seg button:focus-visible{outline:2px solid var(--accent)}
+.stats{display:grid;grid-template-columns:minmax(0,2fr) repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.stats{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.stats .kpi:first-child{grid-column:1/-1}}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+
+.store h2{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.store h2 span{font-family:var(--f-body);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+label.tg{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+
+.notice{background:var(--wip-soft);color:var(--ink);border-radius:10px;padding:12px 14px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:9px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+
+<div class="app">
+  <header class="top">
+    <a class="brand" href="#apercu"><i aria-hidden="true"></i>Chantier de l'appart</a>
+    <nav aria-label="Sections">
+      <a href="#apercu" id="nav-apercu">Vue d'ensemble</a>
+      <a href="#plan-3d" id="nav-3d">Plan 3D</a>
+      <a href="#courses" id="nav-courses">Courses</a>
+    </nav>
+    <span class="sync" id="sync">Connexion…</span>
+  </header>
+  <main id="view" aria-live="polite">
+    <div class="stack"><h1>Chargement du chantier…</h1><p class="muted">Les pièces, tâches et achats arrivent.</p></div>
+  </main>
+  <section id="v3d" hidden aria-label="Plan 3D">
+    <div><div class="eyebrow">Plan 3D</div><h1>L'appartement en volume</h1></div>
+    <div class="stage3d" id="stage3d">
+      <div class="lab3d" id="lab3d"></div>
+      <div class="ctrl3d">
+        <div class="seg" role="group" aria-label="Point de vue"><button id="c3-iso" aria-pressed="true">Vue 3D</button><button id="c3-top" aria-pressed="false">Dessus</button></div>
+        <div class="seg" role="group" aria-label="Hauteur des murs"><button id="c3-cut" aria-pressed="true">Murs coupés</button><button id="c3-full" aria-pressed="false">Murs pleins</button></div>
+      </div>
+    </div>
+    <p class="muted" style="font-size:13px;margin:0">Relevé magicplan du 7 novembre, environ 77 m² habitables. Couleur du sol selon l'état de la pièce. Touche une pièce ou son étiquette pour ouvrir sa fiche. Ajoutés à la main car absents du scan : la baie du salon vers le balcon et le passage du couloir vers les toilettes.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(() => {
+const S = { rooms: [], tasks: [], items: [], remarks: [], got: {rooms:false, tasks:false, items:false, remarks:false}, ro: false, db: null, showBought: false, slow: false, off: false };
+const ready = () => S.got.rooms && S.got.tasks && S.got.items && S.got.remarks;
+const remarksOf = id => S.remarks.filter(r => r.room === id).sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
+const dfmt = iso => { try { return new Date(iso).toLocaleDateString('fr-FR', {day:'numeric', month:'short'}); } catch(e) { return ''; } };
+function remarkList(list, withRoom){
+  return `<ul class="list">${list.map(m => { const rn = withRoom ? (S.rooms.find(r => r.id === m.room) || {}).name : '';
+    return `<li class="${m.status === 'done' ? 'done' : ''}"><span class="txt" style="text-decoration:none">${esc(m.text)}<small>${withRoom && rn ? `<a class="lk" href="#piece-${esc(m.room)}">${esc(rn)}</a> · ` : ''}${dfmt(m.created)} · ${m.status === 'done' ? 'Traitée par Claude' : 'En attente'}</small>
+      ${m.reply ? `<small style="color:var(--accent)">Réponse : ${esc(m.reply)}</small>` : ''}</span>
+      ${S.ro || withRoom ? '' : `<button class="x" data-act="del-remark" data-id="${esc(m.id)}" aria-label="Supprimer la remarque">×</button>`}</li>`; }).join('')}</ul>`;
+}
+const STATUS = { a_faire: 'À faire', en_cours: 'En cours', fini: 'Fini' };
+const view = document.getElementById('view'), syncEl = document.getElementById('sync'), v3d = document.getElementById('v3d');
+/* relevé magicplan : centre de pièce + sommets relatifs (m, axe y vers le bas du plan), ouvertures [mur, position 0-1, largeur, (hauteur), type] */
+const PLAN = { ceiling: 2.53, rooms: [
+  {id:'cuisine', label:'Cuisine', s:8.66, c:[-0.87,-0.9], p:[[1.41,1.63],[-1.43,1.64],[-1.45,-1.63],[1.45,-1.64]], w:[[2,0.37,2.07,1.23]], d:[[0,0.17,0.73],[0,0.55,0.73]]},
+  {id:'piece-cuisine', label:'Petite pièce', s:1.09, c:[1.06,-1.84], p:[[0.49,-0.69],[0.49,0.69],[-0.49,0.69],[-0.49,-0.69]], w:[[3,0.51,0.62,0.89]], d:[]},
+  {id:'entree', label:'Entrée', s:3.19, c:[-0.47,1.64], p:[[-1.01,-0.89],[1.01,-0.9],[1.01,0.9],[-1.01,0.89]], w:[], d:[[0,0.76,0.73],[3,0.13,0.8],[0,0.21,0.73],[1,0.42,0.95],[2,0.51,1.43,'open']]},
+  {id:'couloir', label:'Couloir', s:3.63, c:[-2.96,2], p:[[-1.48,1.25],[-1.48,-1.25],[-0.54,-1.25],[-0.54,-0.4],[1.48,-0.4],[1.48,0.56],[-0.58,0.56],[-0.58,1.25]], w:[], d:[[7,0.5,0.79],[4,0.71,0.8],[3,0.53,1.88],[0,0.15,0.7],[1,0.46,0.75],[0,0.816,0.63]]},
+  {id:'chambre-2', label:'Chambre', s:11.11, c:[-5.1,5.38], p:[[-1.56,2.12],[-1.56,-1.54],[0.62,-1.54],[0.62,-2.12],[1.56,-2.12],[1.56,2.11]], w:[[5,0.5,2.99,1.19]], d:[[3,0.52,0.79]]},
+  {id:'sdb', label:'Salle de bain', s:4.23, c:[-5.59,2.76], p:[[1.1,1.07],[-1.1,1.07],[-1.11,-1.07],[1.11,-1.07]], w:[], d:[[3,0.54,0.7]]},
+  {id:'wc', label:'Toilettes', s:1.33, c:[-5.62,1.21], p:[[0.84,-0.49],[0.84,0.49],[-0.84,0.49],[-0.84,-0.49]], w:[], d:[[0,0.5,0.63]]},
+  {id:'chambre-1', label:'Chambre', s:9.32, c:[-5,-0.91], p:[[1.54,1.63],[-1.54,1.64],[-1.54,-1.63],[1.54,-1.64]], w:[[2,0.5,2.96,1.11]], d:[[0,0.16,0.75]]},
+  {id:'sejour', label:'Salon', s:17.15, c:[-1.5,4.78], p:[[-2.04,2.23],[-2.04,-2.23],[2.04,-2.22],[2.04,2.22]], w:[[3,0.5,2.4,2.1]], d:[[1,0.76,1.43,'open'],[2,0.63,2,'open']]},
+  {id:'sejour', label:'Salle à manger', s:11.27, c:[2.1,5.07], p:[[-1.55,1.94],[-1.55,-1.94],[1.55,-1.95],[1.55,1.95]], w:[[3,0.53,2.8,1.2]], d:[[0,0.43,2,'open']]},
+  {id:'cellier', label:'Cellier', s:1.51, c:[-2.49,1.17], p:[[1,0.46],[-1,0.46],[-1,-0.46],[1,-0.46]], w:[], d:[[0,0.5,1.88]]},
+  {id:'balcon', label:'Balcon', s:4.56, c:[-1.49,7.64], p:[[2.04,-0.63],[2.04,0.64],[-2.04,0.64],[-2.04,-0.64]], w:[], d:[], balcony:true, rail:[0,1,2]},
+]};
+const absPts = pr => pr.p.map(([x, y]) => [pr.c[0] + x, pr.c[1] + y]);
+const planSurface = id => Math.round(PLAN.rooms.filter(r => r.id === id).reduce((s, r) => s + r.s, 0) * 10) / 10;
+const fmtM2 = n => n.toLocaleString('fr-FR', {maximumFractionDigits:1}) + ' m²';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur = n => (Number(n) || 0).toLocaleString('fr-FR', {style:'currency', currency:'EUR'});
+const slug = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'piece';
+const safeUrl = u => /^https?:\/\//i.test(String(u || '')) ? String(u) : '';
+let toastT;
+function toast(msg){ let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+  t.textContent = msg; clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 3200); }
+
+/* ---------- calculs ---------- */
+const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.created || '').localeCompare(String(b.created || ''));
+const roomsSorted = () => S.rooms.slice().sort((a, b) => (a.plan ?? 99) - (b.plan ?? 99));
+const tasksOf = id => S.tasks.filter(t => t.room === id).sort(byOrder);
+const itemsOf = id => S.items.filter(t => t.room === id).sort(byOrder);
+const lineCost = it => (Number(it.price) || 0) * (Number(it.qty) || 1);
+function stats(id){
+  const r = S.rooms.find(x => x.id === id) || {}; const ts = tasksOf(id), its = itemsOf(id);
+  const done = ts.filter(t => t.done).length;
+  const pct = ts.length ? Math.round(done / ts.length * 100) : (r.status === 'fini' ? 100 : 0);
+  return { done, total: ts.length, pct, budget: its.reduce((s, i) => s + lineCost(i), 0), spent: its.filter(i => i.bought).reduce((s, i) => s + lineCost(i), 0), toBuy: its.filter(i => !i.bought).length };
+}
+function global(){
+  const total = S.tasks.length, done = S.tasks.filter(t => t.done).length;
+  const doneRooms = S.rooms.filter(r => r.status === 'fini' && !tasksOf(r.id).length).length;
+  const pct = (total + doneRooms) ? Math.round((done + doneRooms) / (total + doneRooms) * 100) : 0;
+  return { pct, left: total - done, budget: S.items.reduce((s, i) => s + lineCost(i), 0), spent: S.items.filter(i => i.bought).reduce((s, i) => s + lineCost(i), 0) };
+}
+
+/* ---------- rendu ---------- */
+function route(){ const h = decodeURIComponent(location.hash.slice(1)); return h || 'apercu'; }
+function render(){
+  const r = route();
+  const cur = {'nav-apercu': r === 'apercu' || r.startsWith('piece-'), 'nav-courses': r === 'courses', 'nav-3d': r === 'plan-3d'};
+  for (const k in cur) { const el = document.getElementById(k); if (cur[k]) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); }
+  const is3d = r === 'plan-3d';
+  v3d.hidden = !is3d; view.hidden = is3d;
+  if (is3d) { init3d(); update3d(); return; }
+  // conserver la saisie en cours pendant les mises à jour en direct
+  const a = document.activeElement, keep = a && a.id && view.contains(a) ? {id:a.id, v:a.value, s:a.selectionStart, e:a.selectionEnd} : null;
+  if (!S.db) view.innerHTML = noDb();
+  else if (!ready()) view.innerHTML = loading();
+  else if (r === 'courses') view.innerHTML = courses();
+  else if (r.startsWith('piece-')) view.innerHTML = room(r.slice(6));
+  else view.innerHTML = overview();
+  if (keep) { const el = document.getElementById(keep.id); if (el) { el.value = keep.v; el.focus(); try { el.setSelectionRange(keep.s, keep.e); } catch(e){} } }
+}
+const noDb = () => `<div class="stack"><h1>Chantier de l'appart</h1><p class="notice">Le carnet de chantier n'est pas accessible depuis cette vue. Ouvre la page connecté à ton compte claude.ai pour voir et modifier les pièces, les tâches et les achats.</p></div>`;
+const loading = () => `<div class="stack"><h1>Chargement du chantier…</h1><p class="muted">${S.slow ? 'Les données mettent du temps à arriver. Vérifie ta connexion, la page se met à jour toute seule dès qu’elles arrivent.' : 'Les pièces, tâches et achats arrivent.'}</p></div>`;
+const statusChip = s => `<span class="chip s-${esc(s || 'a_faire')}">${STATUS[s] || STATUS.a_faire}</span>`;
+
+function overview(){
+  const g = global(), rs = roomsSorted();
+  if (!rs.length) return `<div class="stack"><div><div class="eyebrow">Vue d'ensemble</div><h1>Aucune pièce pour l'instant</h1></div>
+    <p class="muted">Ajoute la première pièce pour commencer à suivre le chantier.</p>${addRoomForm()}</div>`;
+  const tiles = rs.map(r => { const st = stats(r.id);
+    return `<a class="tile s-${esc(r.status)}" href="#piece-${esc(r.id)}">
+      <span class="t-top"><b>${esc(r.name)}${planSurface(r.id) ? `<small class="muted" style="display:block;font-family:var(--f-body);font-size:12px;font-weight:400">${fmtM2(planSurface(r.id))}</small>` : ''}</b>${statusChip(r.status)}</span>
+      <span class="bar" aria-hidden="true"><i style="width:${st.pct}%"></i></span>
+      <span class="meta num"><span>${st.total ? `${st.done}/${st.total} tâches` : (r.status === 'fini' ? 'Terminé' : 'Aucune tâche')}</span><span>${st.budget ? eur(st.budget) : ''}</span></span></a>`; }).join('');
+  const next = rs.filter(r => r.status !== 'fini').sort((a, b) => (a.step ?? 99) - (b.step ?? 99))
+    .flatMap(r => tasksOf(r.id).filter(t => !t.done).slice(0, 2).map(t => ({t, r}))).slice(0, 8);
+  return `<div class="stack">
+    <div><div class="eyebrow">Vue d'ensemble</div><h1>Où en est l'appart</h1></div>
+    <div class="kpis">
+      <div class="kpi"><span>Avancement</span><b>${g.pct} %</b><div class="bar" aria-hidden="true"><i style="width:${g.pct}%"></i></div></div>
+      <div class="kpi"><span>Budget prévu</span><b>${eur(g.budget)}</b></div>
+      <div class="kpi"><span>Déjà dépensé</span><b>${eur(g.spent)}</b></div>
+      <div class="kpi"><span>Tâches restantes</span><b>${g.left}</b></div>
+    </div>
+    <section class="plan-wrap"><div class="sec-head" style="margin:0"><h2>Plan</h2><div class="legend"><span><i style="background:var(--todo)"></i>À faire</span><span><i style="background:var(--wip)"></i>En cours</span><span><i style="background:var(--ok)"></i>Fini</span></div></div>
+      ${svgPlan()}
+      <div class="plan-actions"><a class="btn" href="#plan-3d">Voir en 3D</a></div></section>
+    <section><div class="sec-head"><h2>Pièces</h2><span class="muted" style="font-size:13px">Touche une pièce pour l'ouvrir</span></div>
+      <div class="plan">${tiles}</div></section>
+    <section class="card"><div class="sec-head" style="margin:0"><h2>Prochaines étapes</h2><span class="muted" style="font-size:13px">Dans l'ordre de chantier conseillé</span></div>
+      ${next.length ? `<ul class="list">${next.map(({t, r}) => `<li><input type="checkbox" data-act="task" data-id="${esc(t.id)}" aria-label="Fait : ${esc(t.title)}" ${S.ro ? 'disabled' : ''}>
+        <span class="txt">${esc(t.title)}<small><a class="lk" href="#piece-${esc(r.id)}">${esc(r.name)}</a></small></span></li>`).join('')}</ul>` : '<p class="empty">Plus rien en attente. Bravo.</p>'}
+    </section>
+    ${(() => { const open = S.remarks.filter(m => m.status !== 'done'); return open.length ? `<section class="card"><div class="sec-head" style="margin:0"><h2>Remarques en attente pour Claude</h2><span class="muted" style="font-size:13px">${open.length}</span></div>${remarkList(open.slice(0, 6), true)}</section>` : ''; })()}
+    ${S.ro ? '' : addRoomForm()}
+  </div>`;
+}
+const addRoomForm = () => `<form class="add" data-form="room" aria-label="Ajouter une pièce"><input id="new-room" name="name" placeholder="Nouvelle pièce (ex. Balcon)" required maxlength="40"><button class="btn">Ajouter la pièce</button></form>`;
+
+function room(id){
+  const r = S.rooms.find(x => x.id === id);
+  if (!r) return `<div class="stack"><a class="back" href="#apercu">← Plan</a><h1>Pièce introuvable</h1><p class="muted">Elle a peut-être été supprimée.</p></div>`;
+  const st = stats(id), ts = tasksOf(id), its = itemsOf(id), dis = S.ro ? 'disabled' : '';
+  const link = safeUrl(r.link);
+  return `<div class="stack">
+    <a class="back" href="#apercu">← Plan</a>
+    <div class="room-head"><div><div class="eyebrow">Pièce${planSurface(id) ? ' · ' + fmtM2(planSurface(id)) : ''}</div><h1>${esc(r.name)}</h1></div>
+      <div class="seg" role="group" aria-label="Statut">${Object.keys(STATUS).map(k => `<button class="s-${k}" data-act="status" data-room="${esc(id)}" data-v="${k}" aria-pressed="${(r.status || 'a_faire') === k}" ${dis}>${STATUS[k]}</button>`).join('')}</div></div>
+    <div class="stats">
+      <div class="kpi"><span>Avancement · ${st.done}/${st.total} tâches</span><b>${st.pct} %</b><div class="bar" aria-hidden="true"><i style="width:${st.pct}%"></i></div></div>
+      <div class="kpi"><span>Budget prévu</span><b>${eur(st.budget)}</b></div>
+      <div class="kpi"><span>Dépensé</span><b>${eur(st.spent)}</b></div>
+    </div>
+    ${link ? `<div class="links"><a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">${esc(r.linkLabel || 'Ouvrir la maquette')} ↗</a></div>` : ''}
+    <div class="cols">
+      <section class="card"><h2>Tâches</h2>
+        ${ts.length ? `<ul class="list">${ts.map(t => `<li class="${t.done ? 'done' : ''}"><input type="checkbox" data-act="task" data-id="${esc(t.id)}" ${t.done ? 'checked' : ''} aria-label="Fait : ${esc(t.title)}" ${dis}>
+          <span class="txt">${esc(t.title)}${t.planned && !t.done ? `<small>Dans ta feuille de route le ${dfmt(t.planned)}</small>` : ''}</span>${S.ro ? '' : `<button class="x" data-act="del-task" data-id="${esc(t.id)}" aria-label="Supprimer ${esc(t.title)}">×</button>`}</li>`).join('')}</ul>` : '<p class="empty">Aucune tâche. Ajoute la première ci-dessous.</p>'}
+        ${S.ro ? '' : `<form class="add" data-form="task" data-room="${esc(id)}"><input id="new-task-${esc(id)}" name="title" placeholder="Nouvelle tâche" required maxlength="140"><button class="btn">Ajouter</button></form>`}
+      </section>
+      <section class="card"><h2>Achats</h2>
+        ${its.length ? `<ul class="list">${its.map(itemRow).join('')}</ul>` : '<p class="empty">Rien à acheter pour l’instant.</p>'}
+        ${S.ro ? '' : `<form class="add" data-form="item" data-room="${esc(id)}">
+          <input id="ni-name-${esc(id)}" name="name" placeholder="Article" required maxlength="120">
+          <input id="ni-store-${esc(id)}" name="store" placeholder="Magasin" maxlength="40" class="sm" style="flex-basis:110px">
+          <input id="ni-price-${esc(id)}" name="price" placeholder="Prix €" inputmode="decimal" class="sm">
+          <input id="ni-qty-${esc(id)}" name="qty" placeholder="Qté" inputmode="numeric" class="sm" style="flex-basis:60px">
+          <input id="ni-url-${esc(id)}" name="url" placeholder="Lien (facultatif)" type="url" style="flex-basis:100%">
+          <button class="btn">Ajouter l'article</button></form>`}
+      </section>
+    </div>
+    <section class="card"><h2><label for="notes-${esc(id)}">Notes</label></h2>
+      <textarea id="notes-${esc(id)}" data-act="notes" data-room="${esc(id)}" placeholder="Idées, mesures, références, décisions…" ${S.ro ? 'readonly' : ''}>${esc(r.notes || '')}</textarea>
+      ${S.ro ? '' : '<span class="muted" style="font-size:12px">Enregistré automatiquement quand tu quittes le champ.</span>'}</section>
+    <section class="card"><h2>Remarques pour Claude</h2>
+      <p class="muted" style="margin:0;font-size:14px">Meubles, agencement, changement d'avis : note-le ici, puis dis à Claude « j'ai laissé des remarques ». Il les lit, met à jour la maquette et répond sous chaque remarque.</p>
+      ${remarksOf(id).length ? remarkList(remarksOf(id), false) : ''}
+      ${S.ro ? '' : `<form class="add" data-form="remark" data-room="${esc(id)}"><input id="new-remark-${esc(id)}" name="text" placeholder="Ex. : on veut le lit contre le mur de la fenêtre" required maxlength="600"><button class="btn">Envoyer</button></form>`}
+    </section>
+    ${S.ro ? '' : `<div><button class="btn" data-act="del-room" data-room="${esc(id)}" style="color:var(--danger)">Supprimer cette pièce</button></div>`}
+  </div>`;
+}
+function itemRow(it, withRoom){
+  const u = safeUrl(it.url), q = Number(it.qty) || 1, rn = withRoom ? (S.rooms.find(r => r.id === it.room) || {}).name : '';
+  const name = u ? `<a class="lk" href="${esc(u)}" target="_blank" rel="noopener">${esc(it.name)}</a>` : esc(it.name);
+  const sub = [withRoom ? (rn ? `<a class="lk" href="#piece-${esc(it.room)}">${esc(rn)}</a>` : '') : esc(it.store || ''), it.note ? esc(it.note) : ''].filter(Boolean).join(' · ');
+  return `<li class="${it.bought ? 'done' : ''}"><input type="checkbox" data-act="item" data-id="${esc(it.id)}" ${it.bought ? 'checked' : ''} aria-label="Acheté : ${esc(it.name)}" ${S.ro ? 'disabled' : ''}>
+    <span class="txt">${name}${sub ? `<small>${sub}</small>` : ''}</span>
+    <span class="amt">${eur(lineCost(it))}${q > 1 ? `<small>${q} × ${eur(it.price)}</small>` : ''}</span>
+    ${S.ro || withRoom ? '' : `<button class="x" data-act="del-item" data-id="${esc(it.id)}" aria-label="Supprimer ${esc(it.name)}">×</button>`}</li>`;
+}
+function courses(){
+  const list = S.items.filter(i => S.showBought || !i.bought).sort(byOrder);
+  const groups = {}; list.forEach(i => { const k = (i.store || 'Sans magasin').trim(); (groups[k] = groups[k] || []).push(i); });
+  const toBuy = S.items.filter(i => !i.bought), total = toBuy.reduce((s, i) => s + lineCost(i), 0);
+  const keys = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'fr'));
+  return `<div class="stack">
+    <div><div class="eyebrow">Courses</div><h1>${toBuy.length ? `${toBuy.length} article${toBuy.length > 1 ? 's' : ''} à acheter` : 'Tout est acheté'}</h1></div>
+    <div class="toolbar"><div class="kpi" style="flex-direction:row;align-items:baseline;gap:10px;padding:10px 14px"><span>Reste à acheter</span><b style="font-size:24px">${eur(total)}</b></div>
+      <label class="tg"><input type="checkbox" data-act="show-bought" ${S.showBought ? 'checked' : ''}>Afficher aussi ce qui est acheté</label></div>
+    ${keys.length ? keys.map(k => `<section class="card store"><h2>${esc(k)}<span>${eur(groups[k].filter(i => !i.bought).reduce((s, i) => s + lineCost(i), 0))}</span></h2>
+      <ul class="list">${groups[k].map(i => itemRow(i, true)).join('')}</ul></section>`).join('') : '<p class="empty">La liste est vide. Ajoute des articles depuis la fiche d’une pièce.</p>'}
+  </div>`;
+}
+
+/* ---------- plan 2D ---------- */
+function svgPlan(){
+  const all = PLAN.rooms.flatMap(absPts), xs = all.map(p => p[0]), ys = all.map(p => p[1]), pad = .35;
+  const x0 = Math.min(...xs) - pad, y0 = Math.min(...ys) - pad, w = Math.max(...xs) - x0 + pad, h = Math.max(...ys) - y0 + pad;
+  const body = PLAN.rooms.map(pr => {
+    const room = S.rooms.find(x => x.id === pr.id), st = room ? (room.status || 'a_faire') : 'a_faire', s = stats(pr.id);
+    const fs = pr.s < 2 ? .16 : pr.s < 5 ? .22 : .3, [cx, cy] = pr.c;
+    const name = pr.id === 'sejour' ? pr.label : (room ? room.name : pr.label);
+    return `<a href="#piece-${esc(pr.id)}" aria-label="${esc(name)}"><polygon class="pz s-${esc(st)}${pr.balcony ? ' bal' : ''}" points="${absPts(pr).map(p => p.join(',')).join(' ')}"/>
+      <text class="pn" x="${cx}" y="${cy}" style="font-size:${fs}px">${esc(name)}</text>
+      <text class="pm" x="${cx}" y="${cy + fs * 1.25}" style="font-size:${fs * .82}px">${fmtM2(pr.s)}${room && s.total ? ' · ' + s.pct + ' %' : ''}</text></a>`;
+  }).join('');
+  return `<svg class="plan2d" viewBox="${x0} ${y0} ${w} ${h}" role="img" aria-label="Plan de l'appartement">${body}</svg>`;
+}
+
+/* ---------- plan 3D ---------- */
+let T = null;
+const FLOOR = {a_faire:'#d9d5cc', en_cours:'#efc882', fini:'#a3d1a8'};
+function init3d(){
+  if (T) return;
+  const stage = document.getElementById('stage3d');
+  if (!window.THREE || !THREE.OrbitControls) { T = {failed:true}; stage.insertAdjacentHTML('afterbegin', '<p class="empty" style="padding:20px">La vue 3D n’a pas pu se charger. Recharge la page.</p>'); return; }
+  const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  stage.prepend(renderer.domElement);
+  const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(36, 1, .1, 200);
+  const ctl = new THREE.OrbitControls(cam, renderer.domElement);
+  ctl.enableDamping = true; ctl.dampingFactor = .08; ctl.maxPolarAngle = Math.PI * .47; ctl.minDistance = 3; ctl.maxDistance = 32;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8d877b, .8));
+  const sun = new THREE.DirectionalLight(0xffffff, .65); sun.position.set(5, 14, 10); sun.castShadow = true;
+  Object.assign(sun.shadow.camera, {left:-9, right:9, top:9, bottom:-9, near:1, far:40}); sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0008;
+  const g = new THREE.Group(); scene.add(g); scene.add(sun); sun.target = g;
+  const all = PLAN.rooms.flatMap(absPts), xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+  const ctr = new THREE.Vector3((Math.min(...xs) + Math.max(...xs)) / 2, 0, (Math.min(...ys) + Math.max(...ys)) / 2);
+  T = {renderer, scene, cam, ctl, g, stage, ctr, floors:[], labels:[], cut:true};
+  build3d(); setView3d('iso');
+  new ResizeObserver(() => { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }).observe(stage);
+  let down = null;
+  renderer.domElement.addEventListener('pointerdown', e => down = {x:e.clientX, y:e.clientY});
+  renderer.domElement.addEventListener('pointerup', e => {
+    if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) { down = null; return; } down = null;
+    const rc = renderer.domElement.getBoundingClientRect(), v = new THREE.Vector2((e.clientX - rc.left) / rc.width * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1);
+    const ray = new THREE.Raycaster(); ray.setFromCamera(v, cam); const hit = ray.intersectObjects(T.floors.map(f => f.mesh))[0];
+    if (hit) location.hash = 'piece-' + hit.object.userData.room;
+  });
+  const seg = (on, off, fn) => document.getElementById(on).addEventListener('click', () => { document.getElementById(on).setAttribute('aria-pressed', 'true'); document.getElementById(off).setAttribute('aria-pressed', 'false'); fn(); });
+  seg('c3-iso', 'c3-top', () => setView3d('iso')); seg('c3-top', 'c3-iso', () => setView3d('top'));
+  seg('c3-cut', 'c3-full', () => { T.cut = true; build3d(); update3d(); }); seg('c3-full', 'c3-cut', () => { T.cut = false; build3d(); update3d(); });
+  (function loop(){ if (!v3d.hidden) { ctl.update(); renderer.render(scene, cam); place3dLabels(); } requestAnimationFrame(loop); })();
+}
+const lin = h => new THREE.Color(h).convertSRGBToLinear();
+function setView3d(v){ const c = T.ctr; T.ctl.target.copy(c);
+  if (v === 'top') T.cam.position.set(c.x, 17, c.z + .01); else T.cam.position.set(c.x + 6.5, 10.5, c.z + 11); T.ctl.update(); }
+function build3d(){
+  const {g} = T; g.children.slice().forEach(o => { g.remove(o); o.geometry && o.geometry.dispose(); });
+  T.floors = []; T.labels.forEach(l => l.el.remove()); T.labels = [];
+  const C = PLAN.ceiling, H = T.cut ? 1.15 : C, th = .1;
+  const wallM = new THREE.MeshStandardMaterial({color:lin('#f3f1ec'), roughness:.92});
+  const glassM = new THREE.MeshStandardMaterial({color:lin('#a9cfe2'), roughness:.1, transparent:true, opacity:.45});
+  const railM = new THREE.MeshStandardMaterial({color:lin('#4a4a47'), roughness:.6});
+  const piece = (a, dir, s0, s1, y0, y1, t, m) => { const len = s1 - s0, hh = y1 - y0; if (len < .01 || hh < .01) return;
+    const o = new THREE.Mesh(new THREE.BoxGeometry(len, hh, t), m); const mid = (s0 + s1) / 2;
+    o.position.set(a[0] + dir[0] * mid, y0 + hh / 2, a[1] + dir[1] * mid); o.rotation.y = -Math.atan2(dir[1], dir[0]); o.castShadow = o.receiveShadow = true; g.add(o); };
+  PLAN.rooms.forEach(pr => {
+    const pts = absPts(pr), n = pts.length;
+    const shape = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, -y)));
+    const geo = new THREE.ShapeGeometry(shape); geo.rotateX(-Math.PI / 2);
+    const fm = new THREE.MeshStandardMaterial({color:lin(FLOOR.a_faire), roughness:.85, side:THREE.DoubleSide});
+    const mesh = new THREE.Mesh(geo, fm); mesh.position.y = pr.balcony ? -.04 : .002; mesh.receiveShadow = true; mesh.userData.room = pr.id; g.add(mesh);
+    T.floors.push({mesh, id:pr.id});
+    for (let i = 0; i < n; i++) {
+      if (pr.balcony && !pr.rail.includes(i)) continue;
+      const a = pts[i], b = pts[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < .02) continue;
+      const dir = [(b[0] - a[0]) / L, (b[1] - a[1]) / L], hE = pr.balcony ? 1 : H;
+      const ops = [
+        ...pr.d.filter(o => o[0] === i).map(o => ({u:o[1], w:o[2], y0:0, y1:o[3] === 'open' ? 2.2 : 2.04, glass:false})),
+        ...pr.w.filter(o => o[0] === i).map(o => { const sill = o[3] >= 1.9 ? 0 : Math.max(.3, 2.15 - o[3]); return {u:o[1], w:o[2], y0:sill, y1:sill + o[3], glass:true}; }),
+      ].map(o => ({...o, a:Math.max(0, o.u * L - o.w / 2), b:Math.min(L, o.u * L + o.w / 2)})).sort((p, q) => p.a - q.a);
+      let pos = 0;
+      ops.forEach(o => {
+        if (o.a > pos) piece(a, dir, pos, o.a, 0, hE, th, wallM);
+        piece(a, dir, o.a, o.b, 0, Math.min(o.y0, hE), th, wallM);
+        if (o.y1 < hE) piece(a, dir, o.a, o.b, o.y1, hE, th, wallM);
+        if (o.glass && o.y0 < hE) piece(a, dir, o.a, o.b, o.y0, Math.min(o.y1, hE), .02, glassM);
+        pos = Math.max(pos, o.b);
+      });
+      if (pos < L) piece(a, dir, pos, L, 0, hE, pr.balcony ? .05 : th, pr.balcony ? railM : wallM);
+    }
+    const el = document.createElement('a'); el.className = 'l3'; el.href = '#piece-' + pr.id; el.dataset.room = pr.id; el.dataset.label = pr.label;
+    document.getElementById('lab3d').appendChild(el); T.labels.push({el, pos:new THREE.Vector3(pr.c[0], .35, pr.c[1]), pr});
+  });
+}
+function update3d(){
+  if (!T || T.failed) return;
+  T.floors.forEach(f => { const r = S.rooms.find(x => x.id === f.id); f.mesh.material.color.copy(lin(FLOOR[(r && r.status) || 'a_faire'] || FLOOR.a_faire)); });
+  T.labels.forEach(({el, pr}) => { const r = S.rooms.find(x => x.id === pr.id); const name = pr.id === 'sejour' ? pr.label : (r ? r.name : pr.label);
+    el.innerHTML = `${esc(name)}${r ? statusChip(r.status) : ''}`; });
+}
+function place3dLabels(){
+  const w = T.stage.clientWidth, h = T.stage.clientHeight, v = new THREE.Vector3();
+  T.labels.forEach(({el, pos}) => { v.copy(pos).project(T.cam); if (v.z > 1) { el.hidden = true; return; } el.hidden = false;
+    el.style.left = ((v.x + 1) / 2 * w) + 'px'; el.style.top = ((1 - v.y) / 2 * h) + 'px'; });
+}
+
+/* ---------- écritures ---------- */
+async function write(fn, okMsg){
+  if (!S.db || S.ro) return;
+  try { await fn(); if (okMsg) toast(okMsg); }
+  catch(e){ if (e && e.code === 'invalid_argument') { S.ro = true; render(); toast('Tu peux consulter le chantier mais pas le modifier.'); }
+    else if (e && e.code === 'quota_exceeded') toast('Le carnet est plein. Supprime des éléments anciens.');
+    else toast('Pas enregistré. Réessaie dans un instant.'); }
+}
+const now = () => new Date().toISOString();
+const nextOrder = arr => arr.reduce((m, x) => Math.max(m, x.order ?? 0), 0) + 1;
+
+view.addEventListener('click', e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const act = b.dataset.act, db = S.db;
+  if (act === 'status') write(() => db.doc('rooms/' + b.dataset.room).update({status: b.dataset.v}));
+  if (act === 'del-task') write(() => db.doc('tasks/' + b.dataset.id).delete());
+  if (act === 'del-item') write(() => db.doc('items/' + b.dataset.id).delete());
+  if (act === 'del-remark') write(() => db.doc('remarks/' + b.dataset.id).delete());
+  if (act === 'del-room') {
+    if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Confirmer la suppression (tâches et achats inclus)'; setTimeout(() => { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Supprimer cette pièce'; } }, 4000); return; }
+    const id = b.dataset.room;
+    write(async () => { for (const t of tasksOf(id)) await db.doc('tasks/' + t.id).delete(); for (const i of itemsOf(id)) await db.doc('items/' + i.id).delete(); await db.doc('rooms/' + id).delete(); location.hash = 'apercu'; }, 'Pièce supprimée');
+  }
+});
+view.addEventListener('change', e => {
+  const c = e.target; if (c.type !== 'checkbox') return; const db = S.db;
+  if (c.dataset.act === 'task') write(() => db.doc('tasks/' + c.dataset.id).update({done: c.checked}));
+  if (c.dataset.act === 'item') write(() => db.doc('items/' + c.dataset.id).update({bought: c.checked}));
+  if (c.dataset.act === 'show-bought') { S.showBought = c.checked; render(); }
+});
+view.addEventListener('focusout', e => {
+  const t = e.target; if (t.dataset.act !== 'notes' || S.ro) return;
+  const r = S.rooms.find(x => x.id === t.dataset.room); if (!r || (r.notes || '') === t.value) return;
+  write(() => S.db.doc('rooms/' + r.id).update({notes: t.value}), 'Notes enregistrées');
+});
+view.addEventListener('submit', e => {
+  e.preventDefault(); const f = e.target, fd = new FormData(f), db = S.db; if (!db || S.ro) return;
+  if (f.dataset.form === 'task') { const title = String(fd.get('title') || '').trim(); if (!title) return; const room = f.dataset.room;
+    write(async () => { await db.collection('tasks').add({room, title, done:false, order: nextOrder(tasksOf(room)), created: now()}); f.reset(); }); }
+  if (f.dataset.form === 'item') { const name = String(fd.get('name') || '').trim(); if (!name) return; const room = f.dataset.room;
+    const price = parseFloat(String(fd.get('price') || '0').replace(',', '.')) || 0, qty = Math.max(1, parseInt(fd.get('qty'), 10) || 1);
+    write(async () => { await db.collection('items').add({room, name, store: String(fd.get('store') || '').trim(), price, qty, url: safeUrl(fd.get('url')), bought:false, order: nextOrder(itemsOf(room)), created: now()}); f.reset(); }); }
+  if (f.dataset.form === 'remark') { const text = String(fd.get('text') || '').trim(); if (!text) return; const room = f.dataset.room;
+    write(async () => { await db.collection('remarks').add({room, text, status:'open', created: now()}); f.reset(); }, 'Remarque envoyée'); }
+  if (f.dataset.form === 'room') { const name = String(fd.get('name') || '').trim(); if (!name) return;
+    let id = slug(name); while (S.rooms.some(r => r.id === id)) id += '-2';
+    write(async () => { await db.doc('rooms/' + id).set({name, status:'a_faire', plan: 50 + S.rooms.length, step: 50 + S.rooms.length, notes:'', created: now()}); f.reset(); location.hash = 'piece-' + id; }); }
+});
+window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+
+/* ---------- données ---------- */
+function setSync(){
+  const ok = ready();
+  syncEl.className = 'sync ' + (S.off ? 'warn' : ok ? 'ok' : '');
+  syncEl.textContent = !S.db ? 'Hors ligne' : S.off ? 'Connexion perdue' : ok ? (S.ro ? 'Lecture seule' : 'Synchronisé') : 'Connexion…';
+}
+render(); setSync();
+(async () => {
+  const db = await (window.claude?.use?.('db') ?? null);
+  const user = await (window.claude?.use?.('user') ?? null);
+  if (!db) { S.db = null; S.got = {rooms:true, tasks:true, items:true, remarks:true}; render(); setSync(); return; }
+  S.db = db;
+  try { const can = user ? await user.can('data.write') : null; if (can === false) S.ro = true; } catch(e){}
+  const slowT = setTimeout(() => { S.slow = true; render(); }, 10000);
+  const sub = (name) => db.collection(name).onSnapshot(snap => {
+    S[name] = snap.docs.map(d => Object.assign({id: d.id}, d.data()));
+    if (!snap.metadata.fromCache) { S.got[name] = true; if (ready()) clearTimeout(slowT); }
+    else if (!S.got[name] && snap.size) S.got[name] = true;
+    render(); setSync();
+  }, err => { S.off = true; S.got[name] = true; render(); setSync(); });
+  ['rooms', 'tasks', 'items', 'remarks'].forEach(sub);
+})();
+})();
+</script>
+
+<p id="maj" style="text-align:center;font:13px system-ui,sans-serif;color:#8a847b;padding:8px 16px 28px;margin:0">Lecture seule</p>
+
+</body></html>

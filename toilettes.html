@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex, nofollow">
+<style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head><body>
+<nav style="font:600 14px system-ui,sans-serif;display:flex;gap:16px;flex-wrap:wrap;padding:10px max(16px,env(safe-area-inset-left));background:#2a2622;color:#f3efe8"><a href="index.html" style="color:inherit">Chantier</a><a href="toilettes.html" style="color:inherit">Toilettes 3D</a><a href="montage-toilettes.html" style="color:inherit">Montage toilettes</a></nav>
+<title>Rénovation des toilettes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout : grande vue 3D en tête, ambiances en cartes dessous, options et fiche matériaux ; dimensions repliées en bas */
+:root{
+  --bg:#f1efec; --panel:#ffffff; --stage:#1d1b19; --ink:#1c1a18; --muted:#6a645e; --line:#dfdad4; --accent:#8a5a2b; --accent-soft:#f3e9dd;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151413; --panel:#1f1d1b; --stage:#0f0e0d; --ink:#ece8e3; --muted:#a39b93; --line:#33302c; --accent:#d9a46c; --accent-soft:#33281d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151413; --panel:#1f1d1b; --stage:#0f0e0d; --ink:#ece8e3; --muted:#a39b93; --line:#33302c; --accent:#d9a46c; --accent-soft:#33281d; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px}
+h1{font-family:var(--f-display);font-weight:700;font-size:32px;margin:0;text-wrap:balance}
+header p{margin:0;color:var(--muted)}
+h2{font-family:var(--f-display);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 8px}
+
+.viewer{position:relative;border-radius:14px;overflow:hidden;background:var(--stage);height:min(74vh,700px);min-height:420px}
+@media (max-width:700px){.viewer{height:68vh;min-height:380px}}
+.viewer canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.viewer canvas:active{cursor:grabbing}
+.ov{position:absolute;display:flex;gap:6px;flex-wrap:wrap}
+.ov.top{top:12px;left:12px;right:12px;justify-content:space-between;align-items:flex-start}
+.ov.bottom{left:12px;right:12px;bottom:12px;justify-content:space-between;align-items:flex-end;pointer-events:none}
+.pill{display:flex;background:rgb(20 18 16 / .62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:999px;padding:3px}
+.pill button{font:inherit;font-weight:600;font-size:13px;color:#e9e4de;background:none;border:0;border-radius:999px;padding:6px 13px;cursor:pointer}
+.pill button[aria-pressed="true"]{background:#f4efe9;color:#1c1a18}
+.pill button:focus-visible{outline:2px solid #f4efe9;outline-offset:1px}
+.cap{background:rgb(20 18 16 / .62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#f2ede7;border-radius:10px;padding:8px 12px;max-width:min(420px,100%)}
+.cap b{display:block;font-family:var(--f-display);font-size:20px;font-weight:700;line-height:1.1}
+.cap span{font-size:12px;opacity:.8}
+.hint{font-size:12px;color:#e9e4de;opacity:.75;background:rgb(20 18 16 / .45);padding:3px 9px;border-radius:999px}
+
+.ambs{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.amb{font:inherit;text-align:left;color:var(--ink);background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:0;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+.amb:hover{border-color:var(--muted)}
+.amb[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.amb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.amb .strip{display:flex;height:46px}
+.amb .strip i{flex:1}
+.amb .txt{padding:9px 11px 11px;display:flex;flex-direction:column;gap:2px}
+.amb .txt b{font-weight:600;font-size:15px;line-height:1.2}
+.amb .txt small{color:var(--muted);font-size:12px}
+
+.opts{display:flex;flex-wrap:wrap;gap:12px 28px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.opt{display:flex;flex-direction:column;gap:6px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:inherit;font-weight:600;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px 28px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+@media (max-width:760px){.detail{grid-template-columns:minmax(0,1fr)}}
+.detail h3{font-family:var(--f-display);font-size:24px;font-weight:700;margin:0 0 4px}
+.detail p{margin:0;color:var(--muted);max-width:60ch}
+.detail .src{font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px}
+.sw{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.sw span{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);width:56px}
+.sw i{height:40px;border-radius:6px;border:1px solid var(--line)}
+dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 16px;font-size:14px}
+dt{font-weight:600}
+dd{margin:0;color:var(--muted)}
+
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+summary{cursor:pointer;font-weight:600;font-size:14px}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dims{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 16px;margin-top:12px}
+.dims label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
+.dims input{width:78px;font:inherit;font-variant-numeric:tabular-nums;text-align:right;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.dims input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fail{color:#e9e4de;padding:24px}
+.budget{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.b-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:6px 20px}
+.b-head h2{margin:0}
+.b-tot{display:flex;flex-direction:column;align-items:flex-end}
+.b-tot b{font-family:var(--f-display);font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.b-tot span{font-size:13px;color:var(--muted)}
+.budget table{width:100%;border-collapse:collapse;font-size:14px}
+.budget th{text-align:left;font-family:var(--f-display);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:12px 6px 6px;border-bottom:1px solid var(--line)}
+.budget td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.budget td.p{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.budget tr.opt-on td{background:color-mix(in srgb, var(--accent) 10%, transparent)}
+.budget small{display:block;color:var(--muted);font-size:12px}
+.budget .note{font-size:13px;color:var(--muted);margin:0}
+.links{margin:0;color:var(--muted);font-size:14px}.links a{color:var(--ink);font-weight:600}
+.ikea{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.ikea-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 20px}
+.ikea-head h3{font-family:var(--f-display);font-size:24px;font-weight:700;margin:0}
+.ikea-head p{margin:2px 0 0;color:var(--muted);font-size:13px;max-width:60ch}
+.total{text-align:right}
+.total b{display:block;font-family:var(--f-display);font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.total span{font-size:12px;color:var(--muted)}
+.tw{overflow-x:auto}
+.ikea table{width:100%;border-collapse:collapse;font-size:14px;min-width:460px}
+.ikea th{text-align:left;font-family:var(--f-display);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:14px 6px 6px;border-bottom:1px solid var(--line)}
+.ikea td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.ikea td.p{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.ikea td.c{width:28px}
+.ikea input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent)}
+.ikea a{color:var(--ink);font-weight:600;text-decoration-color:var(--line);text-underline-offset:3px}
+.ikea a:hover{text-decoration-color:var(--accent)}
+.ikea small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+.ikea tr.off td{opacity:.45}
+.ikea .note{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Rénovation des toilettes</h1>
+    <p>Marron & beige clair, WC posé, placard IKEA et étagère chêne. Compare les gaines et le coffret bas en panneaux de tasseaux ou simplement peints : le budget suit tes choix.</p>
+  </header>
+
+  <section class="viewer" id="viewer" aria-label="Vue 3D des toilettes">
+    <div class="ov top">
+      <div class="pill" role="group" aria-label="Point de vue">
+        <button id="v-in" aria-pressed="true">Depuis la porte</button>
+        <button id="v-out" aria-pressed="false">Vue d'ensemble</button>
+      </div>
+      <span class="hint" id="hint">Glisser pour regarder autour</span>
+    </div>
+    <div class="ov bottom"><div class="cap" id="cap"></div></div>
+  </section>
+
+  <div class="opts">
+    <div class="opt"><h2>Gaines</h2><div class="seg" id="seg-layout"></div></div>
+    <div class="opt"><h2>Coffret bas</h2><div class="seg" id="seg-coffret"></div></div>
+  </div>
+
+  <section class="budget" aria-label="Budget">
+    <div class="b-head"><h2>Budget toilettes</h2><div class="b-tot"><b id="b-total">–</b><span id="b-diff"></span></div></div>
+    <div class="tw"><table><tbody id="b-rows"></tbody></table></div>
+    <p class="note">≈ = estimation, prix non relevé. Prix Leroy Merlin et IKEA relevés les 7 et 8 novembre 2026. Pas compté : le 2e pot de peinture pour le marron (≈ 25 à 30 €) et la déco.</p>
+  </section>
+
+  <section class="detail" id="detail"></section>
+
+  <p class="links">Liste d'achats et tâches : <a href="index.html#piece-wc">carnet de chantier</a> · Plans et découpes : <a href="montage-toilettes.html">montage des toilettes</a></p>
+
+  <details>
+    <summary>Ajuster les dimensions</summary>
+    <div class="dims" id="dims"></div>
+  </details>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(() => {
+/* ---------- Dimensions (relevé enregistré dans ce navigateur) ---------- */
+const KEY = 'maquette-wc-v1';
+const DIMS = [
+  {k:'A', label:'Largeur intérieure', v:90}, {k:'B', label:'Longueur', v:175}, {k:'C', label:'Hauteur sous plafond', v:250},
+  {k:'D', label:'Largeur de porte', v:70}, {k:'E', label:'Retour de mur à gauche', v:12}, {k:'F', label:'Hauteur de porte', v:204},
+  {k:'G', label:'Largeur gaine gauche', v:22}, {k:'H', label:'Largeur gaine droite', v:22}, {k:'I', label:'Profondeur des gaines', v:30},
+  {k:'J', label:'Profondeur du coffret', v:10, ok:true}, {k:'K', label:'Hauteur du coffret', v:64, ok:true},
+];
+const Dm = {}; DIMS.forEach(d => Dm[d.k] = {v:d.v, ok:!!d.ok});
+try { const s = JSON.parse(localStorage.getItem(KEY) || 'null');
+  if (s) { if (!s._v2) { delete s.J; delete s.K; } for (const k in s) if (Dm[k]) Dm[k] = s[k]; } } catch(e){}
+const saveDims = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.assign({_v2:true}, Dm))); } catch(e){} };
+const V = k => Math.max(1, Number(Dm[k].v) || 1);
+
+/* ---------- Ambiances ---------- */
+const AMB = [
+  {id:'brunbeige', name:'Marron & beige clair', src:'Version retenue',
+   idea:"Soubassement marron jusqu'à 1,15 m, beige très clair au-dessus, fond de niche marron, plafond blanc. Gaines habillées de panneaux de tasseaux chêne sur fond noir, ou peintes en marron.",
+   side:{color:'#6b4a36', split:115, high:'#ece3d3'}, back:{color:'#6b4a36'}, ceil:'#f6f3ee',
+   floor:{type:'planks', color:'#b48c64'}, wood:'#a7774a', cab:'#f4f1ec', metal:'#1c1c1c', wc:'#f6f6f4', plaque:'#e8e8e6',
+   lights:'ceiling', led:false, rug:'none', layout:'placard',
+   sw:[['Bas et fond','#6b4a36'],['Haut','#ece3d3'],['Plafond','#f6f3ee'],['Chêne','#a7774a'],['Fond noir','#1a1714']],
+   items:[['Murs','Marron en bas jusqu’à 1,15 m, beige très clair au-dessus'],['Fond de niche','Marron'],['Coffret bas','Marron, dessus en planche de chêne huilée'],['Plafond','Blanc'],['Sol','Ton parquet, barre de seuil'],['Rangement','Placard IKEA ENHET blanc 40 × 75 cm, étagère chêne dessous'],['WC','Posé, Nerea']]},
+];
+const GAINES = {claustra:'Panneaux tasseaux chêne', peint:'Peintes en marron'};
+const COFFRETS = {peint:'Peint en marron', claustra:'Panneaux tasseaux chêne'};
+const CK = 'maquette-wc-v3-choix';
+let st = {amb:'brunbeige', gaine:'claustra', coffret:'peint', view:'in'};
+try { const p = JSON.parse(localStorage.getItem(CK) || 'null'); if (p) Object.assign(st, p); } catch(e){}
+st.amb = 'brunbeige'; if (!GAINES[st.gaine]) st.gaine = 'claustra'; if (!COFFRETS[st.coffret]) st.coffret = 'peint';
+const saveCh = () => { try { localStorage.setItem(CK, JSON.stringify(st)); } catch(e){} };
+const amb = () => AMB.find(a => a.id === st.amb);
+
+/* ---------- Interface ---------- */
+/* budget : base = carnet de chantier au 08/11 (gaines et coffret peints) */
+const LM = 'Leroy Merlin';
+const BASE = [
+  ['WC', 'Pack WC à poser Nerea, abattant inclus', LM, 59.90],
+  ['WC', 'Robinet d\u2019arrêt, flexible, pipe ≈', LM, 25.00],
+  ['Gaines et coffret', 'Tasseaux 44 × 44, 2,4 m : 2 lots de 4 + 1 ≈', LM, 78.86],
+  ['Gaines et coffret', 'Équerres, lot de 25', LM, 19.90],
+  ['Gaines et coffret', 'Chevilles et vis ≈', LM, 15.00],
+  ['Gaines et coffret', '2 plaques de placo hydrofuge 250 × 120', LM, 47.80],
+  ['Gaines et coffret', 'Planche chêne brut 20 mm, 1,5 m (dessus du coffret)', LM, 20.90],
+  ['Rangement', 'Placard ENHET avec porte + poignées', 'IKEA', 64.00],
+  ['Rangement', 'Étagère chêne + fixations ≈', LM, 26.90],
+  ['Finitions', 'Peinture 2 L (sous-couche déjà faite)', LM, 48.90],
+  ['Finitions', 'Barre de seuil ≈', LM, 10.00],
+];
+const OPT_G = ['Habillage', 'Panneaux tasseaux chêne fond noir 260 × 28,7 : 2 lots de 2 (4 faces de gaines)', LM, 139.80];
+const OPT_C = ['Habillage', 'Panneaux tasseaux chêne fond noir 260 × 28,7 : 1 lot de 2 (façade du coffret, 5 morceaux de 62 cm)', LM, 69.90];
+const eur = n => n.toLocaleString('fr-FR', {style:'currency', currency:'EUR'});
+function drawBudget(){
+  const lines = BASE.map(l => [...l, false]);
+  if (st.gaine === 'claustra') lines.push([...OPT_G, true]);
+  if (st.coffret === 'claustra') lines.push([...OPT_C, true]);
+  const order = ['WC', 'Gaines et coffret', 'Habillage', 'Rangement', 'Finitions', 'Déco'];
+  lines.sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
+  const rows = document.getElementById('b-rows'); let grp = '', html = '';
+  lines.forEach(l => { if (l[0] !== grp) { grp = l[0]; html += `<tr><th colspan="2">${grp}</th></tr>`; }
+    html += `<tr class="${l[4] ? 'opt-on' : ''}"><td>${l[1]}<small>${l[2]}</small></td><td class="p">${eur(l[3])}</td></tr>`; });
+  rows.innerHTML = html;
+  const base = BASE.reduce((s, l) => s + l[3], 0), tot = lines.reduce((s, l) => s + l[3], 0);
+  document.getElementById('b-total').textContent = '≈ ' + eur(Math.round(tot * 100) / 100);
+  document.getElementById('b-diff').textContent = tot > base + .001 ? `+ ${eur(Math.round((tot - base) * 100) / 100)} par rapport aux gaines et coffret peints` : 'Version la moins chère : tout peint';
+}
+function drawUI(){
+  seg('seg-layout', GAINES, st.gaine, k => st.gaine = k);
+  seg('seg-coffret', COFFRETS, st.coffret, k => st.coffret = k);
+  drawBudget();
+  const a = amb();
+  const gaineTxt = st.gaine === 'claustra' ? 'Panneaux de tasseaux chêne sur fond noir (Leroy Merlin, 260 × 28,7 cm), collés sur le placo' : 'Placo peint en marron, comme le fond';
+  document.getElementById('detail').innerHTML = `<div><div class="src">${a.src}</div><h3>${a.name}</h3><p>${a.idea}</p>
+    <div class="sw">${a.sw.map(s => `<span><i style="background:${s[1]}"></i>${s[0]}</span>`).join('')}</div></div>
+    <dl><dt>Gaines</dt><dd>${gaineTxt}</dd>${a.items.map(([k, v]) => `<dt>${k}</dt><dd>${k === 'Coffret bas' ? (st.coffret === 'claustra' ? 'Façade en panneaux de tasseaux chêne, dessus en planche de chêne huilée' : v) : v}</dd>`).join('')}</dl>`;
+  document.getElementById('cap').innerHTML = `<b>${a.name}</b><span>Gaines : ${GAINES[st.gaine].toLowerCase()} · coffret : ${COFFRETS[st.coffret].toLowerCase()}</span>`;
+}
+function seg(id, obj, cur, pick){ const el = document.getElementById(id); el.innerHTML = '';
+  for (const k in obj) { const b = document.createElement('button'); b.textContent = obj[k]; b.setAttribute('aria-pressed', String(k === cur));
+    b.addEventListener('click', () => { pick(k); saveCh(); drawUI(); rebuild(); }); el.appendChild(b); } }
+const dimsEl = document.getElementById('dims');
+DIMS.forEach(d => { const l = document.createElement('label'); l.innerHTML = `<span>${d.label}</span><input id="d-${d.k}" type="number" min="1" step="0.5" value="${Dm[d.k].v}">`;
+  l.querySelector('input').addEventListener('input', e => { const n = parseFloat(e.target.value); if (n > 0) { Dm[d.k] = {v:n, ok:true}; saveDims(); rebuild(); } });
+  dimsEl.appendChild(l); });
+
+/* ---------- 3D ---------- */
+const viewer = document.getElementById('viewer');
+let rebuild = () => {};
+drawUI();
+if (!window.THREE) { viewer.insertAdjacentHTML('beforeend', '<p class="fail">La vue 3D n\'a pas pu se charger. Recharge la page.</p>'); return; }
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x1d1b19);
+viewer.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, 1, 1, 6000);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = .08; controls.maxPolarAngle = Math.PI * .495; controls.enablePan = false;
+const room = new THREE.Group(); scene.add(room);
+
+const col = h => new THREE.Color(h).convertSRGBToLinear();
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647, (seed - 1) / 2147483646);
+const shadeHex = (h, f) => { const c = new THREE.Color(h); c.offsetHSL(0, 0, f); return '#' + c.getHexString(); };
+
+/* textures procédurales */
+const TC = {};
+function ctex(key, size, draw){
+  if (TC[key]) return TC[key];
+  const cv = document.createElement('canvas'); cv.width = cv.height = size; const g = cv.getContext('2d'); const s0 = seed; seed = 99; draw(g, size); seed = s0;
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
+  return TC[key] = t;
+}
+const woodTex = h => ctex('w' + h, 256, (g, s) => { g.fillStyle = h; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 80; i++) { const y = rnd() * s; g.strokeStyle = shadeHex(h, (rnd() - .5) * .14); g.globalAlpha = .55; g.lineWidth = .6 + rnd() * 2.4;
+    g.beginPath(); for (let x = 0; x <= s; x += 8) { const yy = y + Math.sin(x / 37 + i) * 2.5; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke(); } g.globalAlpha = 1; });
+const concTex = h => ctex('c' + h, 256, (g, s) => { g.fillStyle = h; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 40; i++) { const x = rnd() * s, y = rnd() * s, r = 20 + rnd() * 70; const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, rnd() > .5 ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.08)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, s, s); }
+  for (let i = 0; i < 2600; i++) { g.fillStyle = rnd() > .5 ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.12)'; g.fillRect(rnd() * s, rnd() * s, 1 + rnd() * 1.5, 1 + rnd() * 1.5); } });
+const tileTex = (h, gr) => ctex('t' + h + gr, 256, (g, s) => { g.fillStyle = gr; g.fillRect(0, 0, s, s);
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) { g.fillStyle = shadeHex(h, (rnd() - .5) * .04); g.fillRect(c * s/2 + 1.5, r * s/2 + 1.5, s/2 - 3, s/2 - 3); } });
+const plankTex = h => ctex('p' + h, 256, (g, s) => { const rows = 4, rh = s / rows;
+  for (let r = 0; r < rows; r++) { const off = (r % 2) * s * .5; for (let k = -1; k < 2; k++) { g.fillStyle = shadeHex(h, (rnd() - .5) * .1); g.fillRect(off + k * s, r * rh, s, rh); }
+    for (let i = 0; i < 14; i++) { const y = r * rh + rnd() * rh; g.strokeStyle = shadeHex(h, (rnd() - .5) * .16); g.globalAlpha = .5; g.lineWidth = 1; g.beginPath(); g.moveTo(0, y); g.lineTo(s, y + (rnd() - .5) * 3); g.stroke(); }
+    g.globalAlpha = 1; g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, r * rh, s, 1.5); g.fillRect(off % s, r * rh, 1.5, rh); } });
+const juteTex = () => ctex('jute', 128, (g, s) => { g.fillStyle = '#b8996a'; g.fillRect(0, 0, s, s);
+  for (let y = 0; y < s; y += 4) for (let x = 0; x < s; x += 4) { g.fillStyle = ((x + y) / 4) % 2 ? 'rgba(80,55,25,.25)' : 'rgba(255,240,210,.18)'; g.fillRect(x, y, 4, 2); } });
+const decoTex = () => ctex('deco', 128, (g, s) => { g.fillStyle = '#161616'; g.fillRect(0, 0, s, s); g.strokeStyle = '#c9a45c'; g.lineWidth = 2.4;
+  const fan = (x, y) => { g.fillStyle = '#161616'; g.beginPath(); g.arc(x, y, 64, Math.PI, 2*Math.PI); g.fill(); for (let r = 64; r >= 9; r -= 11) { g.beginPath(); g.arc(x, y, r, Math.PI, 2*Math.PI); g.stroke(); } };
+  fan(0, 64); fan(128, 64); fan(64, 128); });
+const artTex = () => ctex('art', 256, (g, s) => { g.fillStyle = '#efe9df'; g.fillRect(0, 0, s, s); g.strokeStyle = '#3d4a33'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(s/2, s*.88); g.quadraticCurveTo(s*.46, s/2, s/2, s*.12); g.stroke(); g.fillStyle = '#56663f';
+  for (let i = 0; i < 9; i++) { const y = s*.2 + i * s*.075, d = i % 2 ? 1 : -1; g.save(); g.translate(s/2, y); g.rotate(d * .7); g.beginPath(); g.ellipse(d * 22, 0, 24, 8, 0, 0, Math.PI*2); g.fill(); g.restore(); } });
+
+let DISP = [];
+function mat(opts){ const m = new THREE.MeshStandardMaterial(Object.assign({roughness:.85, metalness:0}, opts)); DISP.push(m); return m; }
+function paint(h, rough=.9){ return mat({color:col(h), roughness:rough}); }
+function texM(tex, rx, ry, rough=.85, extra={}){ const t = tex.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); DISP.push(t); return mat(Object.assign({map:t, roughness:rough}, extra)); }
+function glow(h, k=2.2){ return new THREE.MeshBasicMaterial({color:col(h).multiplyScalar(k), toneMapped:false}); }
+
+/* repère local : x de 0 (mur gauche) à A (mur droit) vu depuis la porte, z de 0 (porte) à B (fond) */
+let A, B, C, cutaway = [], lights = [];
+const WX = x => A - x;
+function add(m, cast=true){ m.castShadow = cast; m.receiveShadow = true; room.add(m); return m; }
+function box(x, y, z, w, h, d, m, cast=true){ const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(WX(x + w/2), y + h/2, z + d/2); return add(o, cast); }
+function cyl(rt, rb, h, x, y, z, m, seg=24){ const o = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m); o.position.set(WX(x), y + h/2, z); return add(o); }
+function sph(r, x, y, z, m){ const o = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), m); o.position.set(WX(x), y, z); return add(o); }
+function plight(x, y, z, color, inten, dist, shadow=false){ const l = new THREE.PointLight(col(color), inten, dist, 2); l.position.set(WX(x), y, z);
+  if (shadow) { l.castShadow = true; l.shadow.mapSize.set(1024, 1024); l.shadow.bias = -0.002; l.shadow.camera.near = 2; l.shadow.camera.far = 900; l.shadow.radius = 4; }
+  room.add(l); lights.push(l); return l; }
+
+const leafA = () => mat({color:col('#3f6b35'), roughness:.7}), leafB = () => mat({color:col('#2f5a2c'), roughness:.7});
+function plant(x, y, z, {s=1, trail=0, pot='#e9e4dc'}={}){
+  cyl(4.6*s, 3.6*s, 8*s, x, y, z, paint(pot, .6));
+  const la = leafA(), lb = leafB();
+  for (let i = 0; i < 8; i++) sph((2.8 + rnd()*2.2)*s, x + (rnd()-.5)*8*s, y + 9*s + rnd()*7*s, z + (rnd()-.5)*7*s, i % 2 ? la : lb);
+  for (let t = 0; t < trail; t++) { const ox = x + (t - (trail-1)/2) * 4.5; for (let j = 0; j < 9; j++) sph(1.6 + rnd()*.6, ox + (rnd()-.5)*2, y + 6*s - j*3.6, z - 4.5*s - j*.15, j % 2 ? la : lb); }
+}
+function basket(x, y, z, w=16, h=10, d=12){ box(x - w/2, y, z - d/2, w, h, d, texM(juteTex(), w/10, h/10, .95)); }
+function towels(x, y, z){ const m = paint('#e8e2d8', .95); for (let i = 0; i < 2; i++) { const o = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 18, 18), m); o.rotation.z = Math.PI/2; o.position.set(WX(x), y + 4.2 + i*8.2, z); add(o); } }
+function candle(x, y, z){ cyl(2.6, 2.6, 6, x, y, z, paint('#f1ece4', .6)); const f = new THREE.Mesh(new THREE.SphereGeometry(.9, 10, 10), glow('#ffb35c', 3)); f.position.set(WX(x), y + 7.4, z); room.add(f); plight(x, y + 9, z, '#ffb35c', .25, 60); }
+function diffuser(x, y, z, m){ cyl(2.6, 2.6, 8, x, y, z, mat({color:col('#2a2622'), roughness:.2, metalness:.1})); for (let i = 0; i < 4; i++) { const o = new THREE.Mesh(new THREE.CylinderGeometry(.25, .25, 22, 6), m); o.position.set(WX(x + (i - 1.5)*1.2), y + 15, z + (i % 2 - .5)*1.2); o.rotation.z = (i - 1.5) * .12; add(o, false); } }
+function pampas(x, y, z){ cyl(3.5, 2.5, 18, x, y, z, paint('#121212', .5)); const m = paint('#d9c3a0', 1); for (let i = 0; i < 5; i++) { const o = new THREE.Mesh(new THREE.ConeGeometry(2.6, 22, 8), m); o.position.set(WX(x + (rnd()-.5)*6), y + 32 + rnd()*6, z + (rnd()-.5)*4); o.rotation.z = (rnd()-.5)*.5; add(o); } }
+
+function build(){
+  room.children.slice().forEach(o => { room.remove(o); if (o.geometry) o.geometry.dispose(); });
+  DISP.forEach(d => d.dispose()); DISP = []; cutaway = []; lights = []; seed = 7;
+  const a = amb(), claus = st.gaine === 'claustra', clausC = st.coffret === 'claustra', P = claus ? 1.6 : 0, Pc = clausC ? 1.6 : 0;
+  const fondM = paint('#1a1714', .9), slatM = texM(woodTex('#a7774a'), 1, 3, .6);
+  A = V('A'); B = V('B'); C = V('C');
+  const Dw = Math.min(V('D'), A), E = Math.min(V('E'), A - Dw), F = Math.min(V('F'), C);
+  const G = V('G'), H = V('H'), I = Math.min(V('I'), B - 40), J = Math.min(V('J'), A - 40), K = Math.min(V('K'), C - 20);
+  const L = B - I, NW = Math.max(30, A - G - H), cx = G + NW/2, t = 8;
+
+  /* matériaux de l'ambiance */
+  const sideM = (w, h) => a.side.tex === 'concrete' ? texM(concTex(a.side.color), w/110, h/110, .95) : paint(a.side.color);
+  const highM = a.side.high ? paint(a.side.high) : null;
+  const backM = (w, h) => a.back.tex === 'concrete' ? texM(concTex(a.back.color), w/110, h/110, .95) : a.back.tex === 'deco' ? texM(decoTex(), w/30, h/30, .7) : paint(a.back.color);
+  const gaineM = (w, h) => a.back.tex === 'deco' ? paint(a.side.color) : backM(w, h);
+  const woodM = (w, h) => texM(woodTex(a.wood), Math.max(1, w/60), Math.max(1, h/60), .6);
+  const cabM = a.cab === 'wood' ? texM(woodTex(a.wood), 1, 2, .55) : paint(a.cab, .45);
+  const metalM = mat({color:col(a.metal), roughness:.35, metalness:a.metal === '#c9a45c' ? .9 : .3});
+  const ceramM = mat({color:col(a.wc), roughness:.18, metalness:0});
+
+  /* murs (épaisseur vers l'extérieur) */
+  const wall = (x, z, w, d, cut) => {
+    const parts = [];
+    if (a.side.split) { parts.push(box(x, 0, z, w, a.side.split, d, sideM(Math.max(w, d), a.side.split))); parts.push(box(x, a.side.split, z, w, C - a.side.split, d, highM)); }
+    else parts.push(box(x, 0, z, w, C, d, sideM(Math.max(w, d), C)));
+    if (cut) cutaway.push(...parts);
+  };
+  wall(-t, 0, t, B, false);                         // mur gauche
+  wall(A, 0, t, B, true);                           // mur droit
+  // mur de la porte non dessiné : on regarde depuis le seuil
+  box(-t, 0, B, A + 2*t, C, t, backM(A + 2*t, C));  // mur du fond
+  cutaway.push(box(-t, C, -t, A + 2*t, 3, B + 2*t, paint(a.ceil), false)); // plafond
+  // sol
+  const fm = a.floor.type === 'planks' ? texM(plankTex(a.floor.color), (A + 2*t)/80, (B + 2*t)/80, .7) : texM(tileTex(a.floor.color, a.floor.grout), (A + 2*t)/60, (B + 2*t)/60, .55);
+  box(-t, -3, -t, A + 2*t, 3, B + 2*t, fm);
+  // gaines
+  const x0n = G + P, x1n = A - H - P, NWn = x1n - x0n, cxn = (x0n + x1n) / 2;
+  if (!claus) { box(0, 0, L, G, C, I, gaineM(G, C)); box(A - H, 0, L, H, C, I, gaineM(H, C)); }
+  else {
+    const fond = fondM, slat = slatM, sw = 2.6, pitch = 3.5, y0 = 1, hh = C - 1.5;
+    const front = (xa, len) => { box(xa, 0, L, len, C, I, fond); box(xa, y0, L - P, len, hh, P - 1, fond);
+      const n = Math.floor((len - .6) / pitch); const off = (len - (n - 1) * pitch - sw) / 2;
+      for (let k = 0; k < n; k++) box(xa + off + k * pitch, y0, L - P, sw, hh, 1, slat); };
+    const side = (xs, dir) => { box(dir > 0 ? xs : xs - (P - 1), y0, L - P, P - 1, hh, I + P, fond);
+      const len = I + P, n = Math.floor((len - .6) / pitch), off = (len - (n - 1) * pitch - sw) / 2;
+      for (let k = 0; k < n; k++) box(dir > 0 ? xs + P - 1 : xs - P, y0, L - P + off + k * pitch, 1, hh, sw, slat); };
+    front(0, G); side(G, 1); front(A - H, H); side(A - H, -1);
+  }
+  // coffret bas refait + planche chêne
+  box(0, 0, 0, J, K - 2, L - P, clausC ? fondM : sideM(L, K));
+  if (clausC) { const sw = 2.6, pitch = 3.5, hc = K - 3, len = L - P, n = Math.floor((len - .6) / pitch), off = (len - (n - 1) * pitch - sw) / 2;
+    box(J, 1, 0, .6, hc, len, fondM);
+    for (let k = 0; k < n; k++) box(J + .6, 1, off + k * pitch, 1, hc, sw, slatM); }
+  box(0, K - 2, 0, J + Pc + 2, 2, L - P, woodM(L, 10));
+
+  /* WC */
+  {
+    box(cxn - 18, 38, B - 15, 36, 36, 15, ceramM);
+    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(18, 13, 39, 32), ceramM); bowl.scale.z = 1.25; bowl.position.set(WX(cxn), 19.5, B - 15 - 22); add(bowl);
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(18.6, 18.6, 2, 32), ceramM); lid.scale.z = 1.25; lid.position.set(WX(cxn), 40, B - 15 - 22); add(lid);
+    box(cxn - 3, 74, B - 9, 6, 1.2, 3, metalM);
+  }
+  if (false) {
+    const hD = 20, hH = 115;
+    box(G, 0, B - hD, NW, hH, hD, gaineM(NW, hH));
+    box(G, hH, B - hD - 1, NW, 3, hD + 1, woodM(NW, 20));
+    box(cx - 12, 92, B - hD - .8, 24, 15, .8, mat({color:col(a.plaque), roughness:.3, metalness:.4}));
+    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(18, 14, 24, 32), ceramM); bowl.scale.z = 1.45; bowl.position.set(WX(cx), 30, B - hD - 26); add(bowl);
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(18.5, 18.5, 2, 32), ceramM); lid.scale.z = 1.45; lid.position.set(WX(cx), 43, B - hD - 26); add(lid);
+    baseTop = hH + 3;
+    plant(cx + NW*.28, baseTop, B - 10, {s:.7});
+  }
+
+  /* rangement : étagère chêne à 1,35 m, placard IKEA ENHET 40 × 75 × 32 de 1,70 à 2,45 m */
+  box(x0n, 135, B - 18.5, NWn, 2.7, 18.5, woodM(NWn, 18.5));
+  const cabY = 170, cabH = Math.min(75, C - cabY - 2);
+  box(cxn - 20, cabY, B - 32, 40, cabH, 32, cabM);
+  box(cxn - 20, cabY, B - 32.6, 40, .6, .6, mat({color:new THREE.Color(0x000000), roughness:1}));
+  box(cxn + 15, cabY + 4, B - 33.8, 1.2, 14.3, 1.6, metalM);
+
+  /* accessoires */
+  // dérouleur sur la gaine droite
+  // brosse
+  // tapis
+  if (a.rug === 'rect') box(J + 8, 0, 14, A - J - 16, .8, Math.max(40, L - 75), texM(juteTex(), (A - J)/12, (L - 75)/12, 1), false);
+  if (a.rug === 'round') { const r = Math.min((A - J - 14)/2, 32); const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, .8, 48), texM(juteTex(), 5, 5, 1)); o.position.set(WX(J + 4 + (A - J - 8)/2), .4, Math.min(L*.45, 70)); add(o, false); }
+  if (a.id === 'brun') pampas(A - H - 8, 0, L - 22);
+
+  /* éclairage */
+  room.add(new THREE.HemisphereLight(col('#fff3e6'), col('#3a3028'), a.id === 'brun' || a.id === 'deco' ? .32 : .45));
+  if (a.lights === 'ceiling') {
+    const d = new THREE.Mesh(new THREE.CylinderGeometry(14, 14, 3, 32), glow('#fff2dc', 1.4)); d.position.set(WX(A/2), C - 1.5, B*.48); room.add(d); cutaway.push(d);
+    plight(A/2, C - 14, B*.48, '#fff0d8', 1.25, 600, true);
+  }
+  if (a.lights === 'pendants') {
+    [B*.3, B*.52].forEach((z, i) => {
+      const x = A*.5, y = C - 62;
+      const cord = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, 50, 6), paint('#111111')); cord.position.set(WX(x), C - 25, z); room.add(cord); cutaway.push(cord);
+      const sh = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 4.5, 14, 24, 1, true), mat({color:col('#141414'), roughness:.4, side:THREE.DoubleSide})); sh.position.set(WX(x), y, z); room.add(sh);
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(2.4, 14, 14), glow('#ffd59a', 3)); bulb.position.set(WX(x), y - 7, z); room.add(bulb);
+      plight(x, y - 9, z, '#ffd8a0', .95, 520, i === 0);
+    });
+  }
+  if (a.lights === 'applique') {
+    const z = L*.55, y = 175;
+    box(A - 3, y - 6, z - 4, 3, 12, 8, metalM);
+    const sh = new THREE.Mesh(new THREE.CylinderGeometry(5, 7, 12, 24, 1, true), mat({color:col(a.metal), roughness:.35, metalness:.7, side:THREE.DoubleSide})); sh.position.set(WX(A - 11), y, z); room.add(sh);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(2.6, 14, 14), glow('#ffcf8a', 3)); bulb.position.set(WX(A - 11), y - 3, z); room.add(bulb);
+    plight(A - 14, y - 4, z, '#ffcf8a', 1.1, 520, true);
+  }
+  applyView(false);
+}
+
+/* ---------- Points de vue ---------- */
+let yaw = 0, pitch = -.17, drag = null;
+function placeInside(){
+  const eye = new THREE.Vector3(WX(A/2), 158, -38);
+  camera.position.copy(eye);
+  const dir = new THREE.Vector3(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+  camera.lookAt(eye.clone().add(dir));
+}
+function applyView(reset=true){
+  const inside = st.view === 'in';
+  cutaway.forEach(o => o.visible = inside);
+  controls.enabled = !inside;
+  document.getElementById('v-in').setAttribute('aria-pressed', String(inside));
+  document.getElementById('v-out').setAttribute('aria-pressed', String(!inside));
+  document.getElementById('hint').textContent = inside ? 'Glisser pour regarder autour' : 'Glisser pour tourner · pincer pour zoomer';
+  resize();
+  if (inside) { if (reset) { yaw = 0; pitch = -.17; } placeInside(); }
+  else if (reset || !controls._placed) { const span = Math.max(A, B, C); controls.target.set(WX(A/2), C*.38, B*.55);
+    camera.position.set(WX(A + span*.95), C + span*.35, -span*.75); controls.update(); controls._placed = true; }
+}
+document.getElementById('v-in').addEventListener('click', () => { st.view = 'in'; saveCh(); applyView(); });
+document.getElementById('v-out').addEventListener('click', () => { st.view = 'out'; saveCh(); controls._placed = false; applyView(); });
+const cv = renderer.domElement;
+cv.addEventListener('pointerdown', e => { if (st.view !== 'in') return; drag = {x:e.clientX, y:e.clientY, yaw, pitch}; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (!drag) return;
+  yaw = Math.max(-.3, Math.min(.3, drag.yaw - (e.clientX - drag.x) * .004));
+  pitch = Math.max(-.7, Math.min(.45, drag.pitch + (e.clientY - drag.y) * .004)); placeInside(); });
+const endDrag = () => drag = null; cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+
+function resize(){ const w = viewer.clientWidth, h = viewer.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  camera.fov = st.view === 'in' ? (camera.aspect < 1 ? 68 : 50) : 42; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(viewer);
+
+rebuild = () => build();
+build();
+(function loop(){ if (controls.enabled) controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); })();
+})();
+</script>
+
+</body></html>
